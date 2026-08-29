@@ -6,7 +6,7 @@ export const SITE = {
   tagline: "Building intelligence for what's next.",
   description:
     "INOVIXX is an early-stage technology company building AI-powered products, agentic systems, and intelligent software.",
-  url: "https://inovixx.com",
+  url: "https://inovixx.onrender.com",
 };
 
 // Palette — near-black charcoal base, electric violet + deep blue primaries,
