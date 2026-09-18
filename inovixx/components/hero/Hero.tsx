@@ -1,46 +1,74 @@
+import { HERO } from "@/lib/constants";
 import { Reveal } from "@/components/ui/Reveal";
-import { MagneticButton } from "@/components/ui/MagneticButton";
+import { MagneticButton, Arrow } from "@/components/ui/MagneticButton";
 
+// The hero flanks the Intelligence Core with two display words — the core
+// itself is the fixed R3F canvas behind the page, so the layout only has to
+// leave the centre open.
 export function Hero() {
   return (
-    <section id="hero" className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden bg-grid">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-bg/10 via-transparent to-bg" />
+    <section id="hero" className="relative flex min-h-[100svh] flex-col overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-grid bg-grid-fade opacity-70" />
+      <div className="pointer-events-none absolute inset-0 hero-vignette" />
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-28 pt-40 md:px-10 md:pb-36">
+      {/* Top strip */}
+      <div className="relative z-10 mx-auto flex w-full max-w-[110rem] items-center justify-between px-6 pt-28 md:px-10 md:pt-32">
         <Reveal>
-          <p className="font-mono-label text-xs text-fg-faint">AI PRODUCTS &middot; INTELLIGENT SYSTEMS &middot; SOFTWARE</p>
+          <p className="font-mono-label text-[11px] text-fg-faint">{HERO.eyebrow}</p>
         </Reveal>
+        <Reveal delay={120} className="hidden md:block">
+          {/* How to grab the scene — the wording follows the input the device has. */}
+          <p className="font-mono-label text-[11px] text-fg-faint">
+            <span className="[@media(pointer:coarse)]:hidden">HOLD + DRAG TO ROTATE</span>
+            <span className="hidden [@media(pointer:coarse)]:inline">SWIPE SIDEWAYS TO ROTATE</span>
+          </p>
+        </Reveal>
+      </div>
 
-        <h1 className="mt-6 font-display text-[13vw] font-medium uppercase leading-[0.92] tracking-tight text-fg sm:text-[9vw] md:text-[6.4vw] lg:text-[6vw]">
-          <Reveal as="span" delay={80} className="block">
-            Building
+      {/* Flanking words */}
+      <div className="relative z-10 mx-auto flex w-full max-w-[110rem] flex-1 items-center px-6 py-8 md:px-10">
+        <h1 className="flex w-full flex-col justify-between gap-2 font-display md:flex-row md:items-center">
+          <Reveal as="span" delay={160} className="hero-word block text-fg">
+            {HERO.wordLeft}
           </Reveal>
-          <Reveal
-            as="span"
-            delay={180}
-            className="block text-transparent [-webkit-text-stroke:1px_var(--color-fg)] md:[-webkit-text-stroke:1.5px_var(--color-fg)]"
-          >
-            Intelligence
-          </Reveal>
-          <Reveal as="span" delay={280} className="block">
-            For what&rsquo;s next<span className="text-violet-soft">.</span>
+          <Reveal as="span" delay={300} className="hero-word text-outline block md:text-right">
+            {HERO.wordRight}
           </Reveal>
         </h1>
+      </div>
 
-        <Reveal delay={420}>
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
-            <MagneticButton href="#products">Explore Products</MagneticButton>
-            <MagneticButton href="#labs" variant="ghost">
-              Explore Labs
+      {/* Bottom row */}
+      <div className="relative z-10 mx-auto grid w-full max-w-[110rem] gap-10 px-6 pb-16 md:grid-cols-[1.1fr_1fr] md:items-end md:px-10 md:pb-20">
+        <div>
+          <Reveal delay={420}>
+            <p className="display-lg font-display font-medium text-fg">
+              {HERO.closing.replace(".", "")}
+              <span className="text-violet-soft">.</span>
+            </p>
+          </Reveal>
+          <Reveal delay={520}>
+            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-fg-muted md:text-base">{HERO.lede}</p>
+          </Reveal>
+        </div>
+
+        <Reveal delay={620} className="md:justify-self-end">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:justify-end">
+            <MagneticButton href={HERO.primaryCta.href} size="lg">
+              {HERO.primaryCta.label}
+              <Arrow />
+            </MagneticButton>
+            <MagneticButton href={HERO.secondaryCta.href} variant="glass" size="lg">
+              {HERO.secondaryCta.label}
             </MagneticButton>
           </div>
         </Reveal>
       </div>
 
-      <Reveal delay={600} className="relative z-10 mx-auto mb-10 hidden w-full max-w-7xl px-10 md:block">
-        <div className="flex items-center gap-3 text-fg-faint">
-          <span className="h-8 w-px animate-pulse bg-line" />
-          <span className="font-mono-label text-[11px]">SCROLL</span>
+      {/* Scroll cue */}
+      <Reveal delay={800} className="pointer-events-none absolute bottom-6 left-1/2 hidden -translate-x-1/2 md:block">
+        <div className="flex flex-col items-center gap-3 text-fg-faint">
+          <span className="font-mono-label text-[10px]">SCROLL</span>
+          <span className="scroll-hint relative block h-10 w-px overflow-hidden bg-line" />
         </div>
       </Reveal>
     </section>

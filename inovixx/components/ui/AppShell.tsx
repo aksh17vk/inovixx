@@ -11,7 +11,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <ScrollChoreography enabled={!reducedMotion} />
+      <ScrollChoreography motion={!reducedMotion} />
       {children}
     </>
   );

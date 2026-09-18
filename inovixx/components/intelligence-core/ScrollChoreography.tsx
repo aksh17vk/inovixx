@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { scrollState } from "@/lib/scroll-store";
@@ -13,20 +14,30 @@ const SETTLE_POINTS: { id: string; index: number }[] = [
   { id: "products", index: 2 }, // broken -> products
   { id: "technology", index: 3 }, // products -> technology
   { id: "labs", index: 4 }, // technology -> labs
-  { id: "solutions", index: 5 }, // labs -> dormant
-  { id: "about", index: 6 }, // dormant -> dormant
-  { id: "final", index: 7 }, // dormant -> final
+  { id: "playground", index: 5 }, // labs -> playground
+  { id: "principles", index: 6 }, // playground -> dormant
+  { id: "solutions", index: 7 }, // dormant -> dormant
+  { id: "about", index: 8 }, // dormant -> dormant
+  { id: "final", index: 9 }, // dormant -> final
 ];
 
-export function ScrollChoreography({ enabled }: { enabled: boolean }) {
+// `motion` gates only the hero camera dolly. The section triggers always run:
+// they feed scrollState.master, which the scene needs even under reduced
+// motion to fade itself out behind content (it just won't *move*).
+//
+// This lives in the root layout, so it outlives client-side navigation. The
+// effect is keyed on the pathname: coming back from /privacy, the home
+// sections are brand-new DOM nodes and the old triggers point at detached ones.
+export function ScrollChoreography({ motion }: { motion: boolean }) {
+  const pathname = usePathname();
+
   useEffect(() => {
-    if (!enabled) return;
     gsap.registerPlugin(ScrollTrigger);
 
     const triggers: ScrollTrigger[] = [];
 
     const hero = document.getElementById("hero");
-    if (hero) {
+    if (hero && motion) {
       triggers.push(
         ScrollTrigger.create({
           trigger: hero,
@@ -63,8 +74,13 @@ export function ScrollChoreography({ enabled }: { enabled: boolean }) {
     return () => {
       window.clearTimeout(refresh);
       triggers.forEach((t) => t.kill());
+      // Back to the resting scene, so a return visit doesn't open on the finale.
+      scrollState.master = 0;
+      scrollState.heroApproach = 0;
+      scrollState.finalLocal = 0;
+      scrollState.hasScrolled = false;
     };
-  }, [enabled]);
+  }, [motion, pathname]);
 
   return null;
 }

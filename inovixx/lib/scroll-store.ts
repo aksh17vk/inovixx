@@ -2,14 +2,14 @@
 // GSAP ScrollTrigger callbacks. Deliberately outside React state — this
 // value changes up to 60x/sec and does not need to trigger re-renders.
 
-export type SceneName =
-  | "core"
-  | "broken"
-  | "products"
-  | "technology"
-  | "labs"
-  | "dormant"
-  | "final";
+// The shapes the network can take. Every formation exists at any particle count.
+export const FORMATION_KEYS = ["core", "broken", "products", "technology", "labs", "final"] as const;
+export type FormationKey = (typeof FORMATION_KEYS)[number];
+
+// A scene is a stop in the scroll story. Most are a formation; two are not:
+//   dormant    — the network has faded out (it keeps the labs shape while it does)
+//   playground — the visitor picks the formation (see lib/play-store.ts)
+export type SceneName = FormationKey | "dormant" | "playground";
 
 export const SCENE_ORDER: SceneName[] = [
   "core",
@@ -17,10 +17,16 @@ export const SCENE_ORDER: SceneName[] = [
   "products",
   "technology",
   "labs",
-  "dormant",
-  "dormant",
+  "playground",
+  "dormant", // principles
+  "dormant", // solutions
+  "dormant", // about
   "final",
 ];
+
+// Index of the last scene — the final CTA convergence.
+export const LAST_SCENE = SCENE_ORDER.length - 1;
+export const PLAYGROUND_SCENE = SCENE_ORDER.indexOf("playground");
 
 export const scrollState = {
   // Continuous 0..(SCENE_ORDER.length - 1) master progress across the page.
@@ -34,6 +40,9 @@ export const scrollState = {
   // 0..1, how far the pointer has nudged the scene (parallax), decays each frame.
   pointerX: 0,
   pointerY: 0,
+  // false until the pointer has actually moved — (0, 0) is the screen centre,
+  // so pointer-reactive effects must not treat the initial value as a position.
+  pointerActive: false,
   // true once the user has scrolled at all — used to gate the entrance animation.
   hasScrolled: false,
 };
@@ -41,4 +50,5 @@ export const scrollState = {
 export function setPointer(x: number, y: number) {
   scrollState.pointerX = x;
   scrollState.pointerY = y;
+  scrollState.pointerActive = true;
 }

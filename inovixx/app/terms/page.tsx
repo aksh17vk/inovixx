@@ -9,7 +9,7 @@ export default function TermsPage() {
   return (
     <>
       <Navbar />
-      <main className="mx-auto min-h-[70vh] max-w-3xl px-6 pb-32 pt-40 md:px-10">
+      <main id="main-content" className="mx-auto min-h-[70vh] max-w-3xl px-6 pb-32 pt-40 md:px-10">
         <p className="font-mono-label text-xs text-fg-faint">LEGAL</p>
         <h1 className="mt-6 font-display text-4xl font-medium uppercase tracking-tight">Terms of Service</h1>
         <p className="mt-6 max-w-xl text-fg-muted">

@@ -5,7 +5,8 @@ import gsap from "gsap";
 
 type CommonProps = {
   children: ReactNode;
-  variant?: "solid" | "ghost";
+  variant?: "solid" | "ghost" | "glass";
+  size?: "md" | "lg";
   className?: string;
 };
 
@@ -14,7 +15,7 @@ type ButtonAsButton = CommonProps & { href?: undefined; onClick?: () => void };
 
 export function MagneticButton(props: ButtonAsLink | ButtonAsButton) {
   const ref = useRef<HTMLAnchorElement & HTMLButtonElement>(null);
-  const { children, variant = "solid", className = "" } = props;
+  const { children, variant = "solid", size = "md", className = "" } = props;
 
   const handleMove = (e: MouseEvent) => {
     const el = ref.current;
@@ -32,11 +33,14 @@ export function MagneticButton(props: ButtonAsLink | ButtonAsButton) {
   };
 
   const base =
-    "group relative inline-flex items-center gap-2.5 rounded-full px-6 py-3 text-sm font-medium tracking-tight transition-colors duration-300 focus-visible:outline-none";
-  const styles =
-    variant === "solid"
-      ? "bg-fg text-bg hover:bg-violet-soft"
-      : "border border-line text-fg hover:border-violet-soft/60 hover:text-violet-soft";
+    "group/btn relative inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full font-medium tracking-tight transition-[color,background-color,border-color,box-shadow] duration-300";
+  const sizing = size === "lg" ? "px-7 py-3.5 text-[15px]" : "px-6 py-3 text-sm";
+  const styles = {
+    solid:
+      "bg-fg text-bg shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_12px_40px_-12px_rgba(155,130,255,0.55)] hover:bg-violet-soft hover:text-bg",
+    ghost: "border border-line text-fg hover:border-violet-soft/60 hover:text-violet-soft",
+    glass: "glass text-fg hover:border-violet-soft/50",
+  }[variant];
 
   const content = (
     <span className="relative z-10 inline-flex items-center gap-2.5">{children}</span>
@@ -49,7 +53,7 @@ export function MagneticButton(props: ButtonAsLink | ButtonAsButton) {
         href={props.href}
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
-        className={`${base} ${styles} ${className}`}
+        className={`${base} ${sizing} ${styles} ${className}`}
       >
         {content}
       </a>
@@ -63,9 +67,21 @@ export function MagneticButton(props: ButtonAsLink | ButtonAsButton) {
       onClick={props.onClick}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className={`${base} ${styles} ${className}`}
+      className={`${base} ${sizing} ${styles} ${className}`}
     >
       {content}
     </button>
+  );
+}
+
+// Small arrow that nudges right on hover of the parent button.
+export function Arrow() {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block transition-transform duration-300 group-hover/btn:translate-x-1"
+    >
+      &rarr;
+    </span>
   );
 }
