@@ -33,7 +33,7 @@ export function MagneticButton(props: ButtonAsLink | ButtonAsButton) {
   };
 
   const base =
-    "group/btn relative inline-flex items-center gap-2.5 rounded-full font-medium tracking-tight transition-[color,background-color,border-color,box-shadow] duration-300 focus-visible:outline-none";
+    "group/btn relative inline-flex items-center justify-center gap-2.5 whitespace-nowrap rounded-full font-medium tracking-tight transition-[color,background-color,border-color,box-shadow] duration-300";
   const sizing = size === "lg" ? "px-7 py-3.5 text-[15px]" : "px-6 py-3 text-sm";
   const styles = {
     solid:

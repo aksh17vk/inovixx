@@ -19,7 +19,7 @@ export function Capabilities() {
 
       <div className="mx-auto mt-24 max-w-7xl px-6 md:mt-32 md:px-10">
         <div className="grid gap-16 md:grid-cols-[1fr_1.15fr] md:gap-24">
-          <div className="md:sticky md:top-32 md:self-start">
+          <div className="scrim md:sticky md:top-32 md:self-start">
             <Reveal>
               <SectionEyebrow index="02" label="POWERED BY" />
             </Reveal>
@@ -38,7 +38,7 @@ export function Capabilities() {
             </Reveal>
           </div>
 
-          <ol className="flex flex-col">
+          <ol className="scrim flex flex-col">
             {CAPABILITIES.map((cap, i) => (
               <Reveal
                 key={cap.key}

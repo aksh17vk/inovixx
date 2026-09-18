@@ -6,7 +6,7 @@ import { StackDiagram } from "./StackDiagram";
 export function Technology() {
   return (
     <section id="technology" className="relative px-6 py-28 md:px-10 md:py-40">
-      <div className="mx-auto max-w-7xl rounded-[32px] glass p-6 sm:p-10 md:p-16">
+      <div className="mx-auto max-w-7xl rounded-[32px] veil p-6 sm:p-10 md:p-16">
         <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
           <div>
             <Reveal>

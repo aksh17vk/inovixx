@@ -7,7 +7,8 @@ export function FinalCTA() {
       id="final"
       className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 py-32 text-center"
     >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-bg via-transparent to-bg" />
+      {/* Fades in from the section above only — the core sits low in this section and must stay lit. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-bg to-transparent" />
 
       <div className="relative z-10 mx-auto max-w-4xl">
         <Reveal>

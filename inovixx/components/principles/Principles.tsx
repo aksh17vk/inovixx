@@ -17,7 +17,7 @@ export function Principles() {
           {PRINCIPLES.map((p, i) => (
             <div
               key={p.key}
-              className="grid gap-6 border-t border-line py-12 last:border-b md:grid-cols-[auto_1fr_minmax(0,22rem)] md:gap-12 md:py-16"
+              className="grid gap-6 border-t border-line py-12 last:border-b md:grid-cols-[auto_1fr] md:gap-x-12 md:py-16 lg:grid-cols-[auto_1fr_minmax(0,22rem)]"
             >
               <span className="font-mono-label pt-2 text-xs text-fg-faint">0{i + 1}</span>
               <ScrollWords
@@ -25,7 +25,7 @@ export function Principles() {
                 text={p.statement}
                 className="display-xl font-display font-medium text-fg"
               />
-              <Reveal delay={100} className="self-end">
+              <Reveal delay={100} className="self-end md:col-start-2 lg:col-start-auto">
                 <p className="text-fg-muted">{p.detail}</p>
               </Reveal>
             </div>

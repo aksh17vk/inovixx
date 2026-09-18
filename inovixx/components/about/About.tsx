@@ -36,7 +36,7 @@ export function About() {
             </Reveal>
 
             <Reveal delay={300}>
-              <dl className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3">
+              <dl className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3 md:grid-cols-1 lg:grid-cols-3">
                 {[
                   { k: "Stage", v: "Early-stage" },
                   { k: "Focus", v: "AI products & agentic systems" },

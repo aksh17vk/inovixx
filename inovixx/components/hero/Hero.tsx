@@ -12,7 +12,7 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0 hero-vignette" />
 
       {/* Top strip */}
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-6 pt-28 md:px-10 md:pt-32">
+      <div className="relative z-10 mx-auto flex w-full max-w-[110rem] items-center justify-between px-6 pt-28 md:px-10 md:pt-32">
         <Reveal>
           <p className="font-mono-label text-[11px] text-fg-faint">{HERO.eyebrow}</p>
         </Reveal>
@@ -22,7 +22,7 @@ export function Hero() {
       </div>
 
       {/* Flanking words */}
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 items-center px-6 md:px-10">
+      <div className="relative z-10 mx-auto flex w-full max-w-[110rem] flex-1 items-center px-6 py-8 md:px-10">
         <h1 className="flex w-full flex-col justify-between gap-2 font-display md:flex-row md:items-center">
           <Reveal as="span" delay={160} className="hero-word block text-fg">
             {HERO.wordLeft}
@@ -34,7 +34,7 @@ export function Hero() {
       </div>
 
       {/* Bottom row */}
-      <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-6 pb-16 md:grid-cols-[1.1fr_1fr] md:items-end md:px-10 md:pb-20">
+      <div className="relative z-10 mx-auto grid w-full max-w-[110rem] gap-10 px-6 pb-16 md:grid-cols-[1.1fr_1fr] md:items-end md:px-10 md:pb-20">
         <div>
           <Reveal delay={420}>
             <p className="display-lg font-display font-medium text-fg">
@@ -48,7 +48,7 @@ export function Hero() {
         </div>
 
         <Reveal delay={620} className="md:justify-self-end">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:justify-end">
             <MagneticButton href={HERO.primaryCta.href} size="lg">
               {HERO.primaryCta.label}
               <Arrow />

@@ -30,9 +30,8 @@ export function useLenis(enabled: boolean) {
 
     lenis.on("scroll", ScrollTrigger.update);
 
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
-    });
+    const tick = (time: number) => lenis.raf(time * 1000);
+    gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
 
     const resize = () => ScrollTrigger.refresh();
@@ -43,8 +42,10 @@ export function useLenis(enabled: boolean) {
     return () => {
       window.clearTimeout(t);
       window.removeEventListener("resize", resize);
+      // Must be the same function reference that was added, or it leaks.
+      gsap.ticker.remove(tick);
+      gsap.ticker.lagSmoothing(500, 33);
       lenis.destroy();
-      gsap.ticker.remove(() => lenis.raf);
     };
   }, [enabled]);
 }

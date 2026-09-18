@@ -21,7 +21,7 @@ export function StackDiagram() {
 
   return (
     <div
-      className="grid gap-10 md:grid-cols-[1fr_1.1fr] md:gap-16"
+      className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-16"
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
     >
@@ -51,7 +51,7 @@ export function StackDiagram() {
                   <span className="block font-display text-lg font-medium tracking-tight md:text-xl">{layer.label}</span>
                   <span
                     className={`mt-1 block max-w-md text-sm text-fg-muted transition-all duration-300 ${
-                      isActive ? "max-h-12 opacity-100" : "max-h-0 overflow-hidden opacity-0 md:max-h-12 md:opacity-60"
+                      isActive ? "max-h-24 opacity-100" : "max-h-0 overflow-hidden opacity-0 md:max-h-24 md:opacity-60"
                     }`}
                   >
                     {layer.detail}

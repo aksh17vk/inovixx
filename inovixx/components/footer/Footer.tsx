@@ -14,29 +14,29 @@ export function Footer() {
           <p className="mt-2 text-sm text-fg-faint">AI products · intelligent systems · software.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-16 gap-y-3 sm:grid-cols-3">
-          <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-x-10 gap-y-8 sm:grid-cols-3 sm:gap-x-16">
+          <div className="flex flex-col gap-2">
             <span className="font-mono-label text-[10px] text-fg-faint">SITE</span>
             {FOOTER_LINKS.slice(0, 3).map((link) => (
-              <a key={link.label} href={link.href} className="text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
+              <Link key={link.label} href={link.href} className="py-1 text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <span className="font-mono-label text-[10px] text-fg-faint">MORE</span>
             {FOOTER_LINKS.slice(3).map((link) => (
-              <a key={link.label} href={link.href} className="text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
+              <Link key={link.label} href={link.href} className="py-1 text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
                 {link.label}
-              </a>
+              </Link>
             ))}
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             <span className="font-mono-label text-[10px] text-fg-faint">LEGAL</span>
-            <Link href="/privacy" className="text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
+            <Link href="/privacy" className="py-1 text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
               Privacy
             </Link>
-            <Link href="/terms" className="text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
+            <Link href="/terms" className="py-1 text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
               Terms
             </Link>
           </div>
@@ -47,7 +47,8 @@ export function Footer() {
         <p className="text-xs text-fg-faint">
           &copy; {new Date().getFullYear()} {SITE.name}. All rights reserved.
         </p>
-        <a href="#hero" className="font-mono-label text-[10px] text-fg-faint transition-colors hover:text-fg">
+        {/* #main-content exists on every route; #hero only on the home page. */}
+        <a href="#main-content" className="font-mono-label py-2 text-[10px] text-fg-faint transition-colors hover:text-fg">
           BACK TO TOP &uarr;
         </a>
       </div>

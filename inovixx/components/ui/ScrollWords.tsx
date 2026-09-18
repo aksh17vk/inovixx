@@ -44,13 +44,18 @@ export function ScrollWords({
     };
   }, [reducedMotion]);
 
+  const words = text.split(" ");
+
   return (
-    // The ref type is loosened because the tag is dynamic.
-    <Tag ref={ref as never} className={className} aria-label={text}>
-      {text.split(" ").map((word, i) => (
+    // The ref type is loosened because the tag is dynamic. Screen readers get
+    // the sentence once, as real text; the per-word spans are presentation only.
+    // (aria-label isn't allowed on a <p>, so it can't carry the name.)
+    <Tag ref={ref as never} className={className}>
+      <span className="sr-only">{text}</span>
+      {words.map((word, i) => (
         <span key={`${word}-${i}`} aria-hidden="true" className="scroll-word inline-block">
           {word}
-          {i < text.split(" ").length - 1 ? " " : ""}
+          {i < words.length - 1 ? " " : ""}
         </span>
       ))}
     </Tag>

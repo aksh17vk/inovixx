@@ -18,7 +18,8 @@ export const COLORS = {
   line: "#1C1C2A",
   fg: "#F4F3F8",
   fgMuted: "#9592A8",
-  fgFaint: "#5C5A70",
+  // 5:1 on bg — the old #5C5A70 was ~3:1 and failed WCAG AA for small text.
+  fgFaint: "#7F7C94",
   violet: "#7C5CFF",
   violetSoft: "#9B82FF",
   blue: "#3E4FE0",
@@ -27,12 +28,14 @@ export const COLORS = {
   pink: "#D98CF5",
 } as const;
 
+// "/#id", not "#id": the navbar and footer also render on /privacy and /terms,
+// where a bare hash points at nothing.
 export const NAV_LINKS = [
-  { label: "Products", href: "#products" },
-  { label: "Technology", href: "#technology" },
-  { label: "Labs", href: "#labs" },
-  { label: "Solutions", href: "#solutions" },
-  { label: "About", href: "#about" },
+  { label: "Products", href: "/#products" },
+  { label: "Technology", href: "/#technology" },
+  { label: "Labs", href: "/#labs" },
+  { label: "Solutions", href: "/#solutions" },
+  { label: "About", href: "/#about" },
 ];
 
 export const HERO = {
@@ -176,10 +179,10 @@ export const SOLUTIONS_ITEMS = [
 ] as const;
 
 export const FOOTER_LINKS = [
-  { label: "Products", href: "#products" },
-  { label: "Technology", href: "#technology" },
-  { label: "Labs", href: "#labs" },
-  { label: "Solutions", href: "#solutions" },
-  { label: "About", href: "#about" },
-  { label: "Contact", href: "#contact" },
+  { label: "Products", href: "/#products" },
+  { label: "Technology", href: "/#technology" },
+  { label: "Labs", href: "/#labs" },
+  { label: "Solutions", href: "/#solutions" },
+  { label: "About", href: "/#about" },
+  { label: "Contact", href: "/#contact" },
 ];

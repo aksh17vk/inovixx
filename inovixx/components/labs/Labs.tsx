@@ -7,7 +7,7 @@ export function Labs() {
   return (
     <section id="labs" className="relative px-6 py-28 md:min-h-[110vh] md:px-10 md:py-40">
       <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[1fr_1fr] lg:gap-20">
-        <div className="lg:sticky lg:top-32 lg:self-start">
+        <div className="scrim lg:sticky lg:top-32 lg:self-start">
           <Reveal>
             <SectionEyebrow index="05" label="INOVIXX LABS" />
           </Reveal>
