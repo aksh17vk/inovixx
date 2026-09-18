@@ -17,7 +17,11 @@ export function Hero() {
           <p className="font-mono-label text-[11px] text-fg-faint">{HERO.eyebrow}</p>
         </Reveal>
         <Reveal delay={120} className="hidden md:block">
-          <p className="font-mono-label text-[11px] text-fg-faint">EARLY-STAGE · BUILDING IN THE OPEN</p>
+          {/* How to grab the scene — the wording follows the input the device has. */}
+          <p className="font-mono-label text-[11px] text-fg-faint">
+            <span className="[@media(pointer:coarse)]:hidden">HOLD + DRAG TO ROTATE</span>
+            <span className="hidden [@media(pointer:coarse)]:inline">SWIPE SIDEWAYS TO ROTATE</span>
+          </p>
         </Reveal>
       </div>
 

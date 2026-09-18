@@ -9,7 +9,7 @@ export function About() {
         <div className="grid gap-12 md:grid-cols-[1fr_1.4fr] md:gap-20">
           <div>
             <Reveal>
-              <SectionEyebrow index="08" label="ABOUT" />
+              <SectionEyebrow index="09" label="ABOUT" />
             </Reveal>
             <Reveal delay={100}>
               <h2 className="display-xl mt-6 font-display font-medium text-fg">

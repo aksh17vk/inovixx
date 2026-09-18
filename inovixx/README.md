@@ -36,16 +36,18 @@ components/
   products/               Section 03 — spotlight cards with animated SVG visuals
   technology/             Section 04 — interactive six-layer stack diagram
   labs/                   Section 05 — terminal-style tracks panel
-  principles/             Section 06 — editorial statements, word-by-word reveal
-  solutions/              Section 07
-  about/                  Section 08
-  final-cta/              Section 09
+  playground/             Section 06 — pinned stage + controls for the 3D scene
+  principles/             Section 07 — editorial statements, word-by-word reveal
+  solutions/              Section 08
+  about/                  Section 09
+  final-cta/              Section 10
   footer/                 Site footer with clipped giant wordmark
   intelligence-core/      the persistent 3D scene, quality ladder and scroll choreography
   ui/                     MagneticButton, Reveal, ScrollWords, SpotlightCard,
                           Marquee, ScrollProgress, SectionEyebrow
 hooks/                    useLenis, useReducedMotion, useDeviceTier, useInView
-lib/                      constants.ts (copy + design tokens), scroll-store.ts
+lib/                      constants.ts (copy + design tokens), scroll-store.ts,
+                          play-store.ts (the visitor's rotation + playground controls)
 ```
 
 Adding a section between existing ones? Give it an id, then add it to
@@ -88,6 +90,32 @@ falls back to a static SVG when WebGL2 is missing.
 | `Effects.tsx` | Selective HDR bloom (+ SMAA on the top rung). |
 | `Starfield.tsx` | Distant backdrop points. |
 
+**Hands on** (`useSceneDrag.ts`, `lib/play-store.ts`, `components/playground/`)
+
+The scene can be turned by hand anywhere on the page. The canvas sits behind
+the content with pointer events off, so the gestures are disambiguated from
+what the pointer already means:
+
+- **Touch:** `touch-action: pan-y pinch-zoom` on `<html>` keeps vertical swipes
+  for scrolling and delivers the sideways ones — a sideways swipe rotates, and
+  once engaged the same gesture tilts too. Scrolling is never trapped.
+- **Mouse:** a drag already means *select text*, so rotation needs a
+  press-and-hold (~240ms, with a ring that closes in on the cursor). A quick
+  drag still selects text. Links, buttons, sliders and `[data-no-orbit]` are
+  never hijacked.
+- **`[data-orbit-stage]`** (the Playground) grabs immediately — nothing to select there.
+
+Yaw stays where it is left; tilt eases home outside the playground, because
+the scroll story is composed for the default lean. Under reduced motion the
+scene moves only while it is actually being dragged (no coasting).
+
+The **Playground** is a scene of its own (`playground` in `SCENE_ORDER`) whose
+formation is the visitor's choice, so layers morph between formation *keys*
+(`frame.fromKey → frame.toKey`), not scene indices: scroll drives that morph
+everywhere else, the clock drives it while parked on the playground. The
+section is `200svh` tall with a sticky stage — that is what makes the scene
+park there for a screen of scrolling instead of passing through.
+
 **Quality ladder** (`quality.ts`)
 
 `useDeviceTier` only decides where a device *starts*: desktop on `high`, tablet
@@ -128,9 +156,12 @@ for everyone else.
   crushes the `#050509` page colour to black, which shows as a seam.
 - Custom shaders end with `#include <colorspace_fragment>` so the composer and
   direct-to-canvas paths match.
-- Fresnel terms use `pow(clamp(1.0 - ndv, 0.0, 1.0), k)`, never `max(ndv, 0.0)`:
-  `normalize()` can overshoot 1.0, `pow()` of a negative base is NaN, and mipmap
-  bloom smears a single NaN pixel across the frame.
+- **Never `pow()` a value that can be negative** — it is undefined in GLSL. It
+  works on Windows (ANGLE/D3D papers over it) and returns NaN on plenty of phone
+  GPUs. Square by hand (`d * d`), and clamp fresnel terms first:
+  `pow(clamp(1.0 - ndv, 0.0, 1.0), k)`, because `normalize()` can overshoot 1.0.
+  A NaN position drops the point; a NaN colour gets smeared across the whole
+  frame by mipmap bloom. This one has bitten twice.
 - Large surfaces over the canvas use `.veil`, not `.glass`: the canvas repaints
   every frame, so a section-sized `backdrop-filter` is re-blurred every frame.
 - `three` is pinned to `~0.185` because `postprocessing` peers on `< 0.187`.

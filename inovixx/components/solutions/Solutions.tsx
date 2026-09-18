@@ -10,7 +10,7 @@ export function Solutions() {
       <div className="mx-auto max-w-7xl">
         <div className="max-w-2xl">
           <Reveal>
-            <SectionEyebrow index="07" label="SOLUTIONS" />
+            <SectionEyebrow index="08" label="SOLUTIONS" />
           </Reveal>
           <Reveal delay={100}>
             <h2 className="display-xl mt-6 font-display font-medium text-fg">

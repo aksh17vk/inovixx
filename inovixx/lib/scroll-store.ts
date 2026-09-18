@@ -2,14 +2,14 @@
 // GSAP ScrollTrigger callbacks. Deliberately outside React state — this
 // value changes up to 60x/sec and does not need to trigger re-renders.
 
-export type SceneName =
-  | "core"
-  | "broken"
-  | "products"
-  | "technology"
-  | "labs"
-  | "dormant"
-  | "final";
+// The shapes the network can take. Every formation exists at any particle count.
+export const FORMATION_KEYS = ["core", "broken", "products", "technology", "labs", "final"] as const;
+export type FormationKey = (typeof FORMATION_KEYS)[number];
+
+// A scene is a stop in the scroll story. Most are a formation; two are not:
+//   dormant    — the network has faded out (it keeps the labs shape while it does)
+//   playground — the visitor picks the formation (see lib/play-store.ts)
+export type SceneName = FormationKey | "dormant" | "playground";
 
 export const SCENE_ORDER: SceneName[] = [
   "core",
@@ -17,6 +17,7 @@ export const SCENE_ORDER: SceneName[] = [
   "products",
   "technology",
   "labs",
+  "playground",
   "dormant", // principles
   "dormant", // solutions
   "dormant", // about
@@ -25,6 +26,7 @@ export const SCENE_ORDER: SceneName[] = [
 
 // Index of the last scene — the final CTA convergence.
 export const LAST_SCENE = SCENE_ORDER.length - 1;
+export const PLAYGROUND_SCENE = SCENE_ORDER.indexOf("playground");
 
 export const scrollState = {
   // Continuous 0..(SCENE_ORDER.length - 1) master progress across the page.

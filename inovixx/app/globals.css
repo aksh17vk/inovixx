@@ -283,6 +283,91 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* Drag-to-rotate (see intelligence-core/useSceneDrag.ts)              */
+/* ------------------------------------------------------------------ */
+
+/* While the scene is held, the whole page is a grab handle. */
+html.is-orbiting,
+html.is-orbiting * {
+  cursor: grabbing !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* The press-and-hold indicator. `scale` is separate from `transform`, which
+   the hook uses to position it, so the two never fight. */
+.orbit-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 70;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--color-violet-soft) 85%, transparent);
+  pointer-events: none;
+  opacity: 0;
+  scale: 1.9;
+  transition:
+    opacity 160ms ease,
+    scale 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 200ms ease;
+}
+/* Closes in over the hold. The delay keeps an ordinary click or a text
+   selection from flashing it. */
+.orbit-ring[data-state="charging"] {
+  opacity: 0.6;
+  scale: 1;
+  transition:
+    opacity 120ms ease 90ms,
+    scale 150ms linear 90ms;
+}
+.orbit-ring[data-state="held"] {
+  opacity: 1;
+  scale: 0.6;
+  background-color: color-mix(in srgb, var(--color-violet) 22%, transparent);
+}
+
+/* Playground sliders. */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 44px; /* the whole row is the hit target */
+  background: transparent;
+  cursor: pointer;
+}
+.range::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 999px;
+  background: var(--color-line);
+}
+.range::-moz-range-track {
+  height: 2px;
+  border-radius: 999px;
+  background: var(--color-line);
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -8px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--color-fg);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-violet) 35%, transparent);
+}
+.range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--color-fg);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-violet) 35%, transparent);
+}
+
+/* ------------------------------------------------------------------ */
 /* Motion                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -393,6 +478,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .orbit-ring {
+    transition: none;
   }
   .marquee-track,
   .draw-line,

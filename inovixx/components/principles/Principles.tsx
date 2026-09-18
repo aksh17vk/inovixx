@@ -10,7 +10,7 @@ export function Principles() {
     <section id="principles" className="relative px-6 py-28 md:px-10 md:py-40">
       <div className="mx-auto max-w-7xl">
         <Reveal>
-          <SectionEyebrow index="06" label="HOW WE WORK" />
+          <SectionEyebrow index="07" label="HOW WE WORK" />
         </Reveal>
 
         <div className="mt-10 md:mt-14">

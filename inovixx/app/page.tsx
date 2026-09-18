@@ -6,6 +6,7 @@ import { Capabilities } from "@/components/capabilities/Capabilities";
 import { Products } from "@/components/products/Products";
 import { Technology } from "@/components/technology/Technology";
 import { Labs } from "@/components/labs/Labs";
+import { Playground } from "@/components/playground/Playground";
 import { Principles } from "@/components/principles/Principles";
 import { Solutions } from "@/components/solutions/Solutions";
 import { About } from "@/components/about/About";
@@ -24,6 +25,7 @@ export default function Home() {
         <Products />
         <Technology />
         <Labs />
+        <Playground />
         <Principles />
         <Solutions />
         <About />

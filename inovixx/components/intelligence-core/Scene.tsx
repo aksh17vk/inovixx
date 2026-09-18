@@ -18,7 +18,8 @@ import { Orbitals } from "./Orbitals";
 import { Effects } from "./Effects";
 import { StudioEnvironment } from "./StudioEnvironment";
 import type { SceneSettings } from "./quality";
-import { SCENE_ORDER, scrollState } from "@/lib/scroll-store";
+import { scrollState } from "@/lib/scroll-store";
+import { orbit, play, stepOrbit } from "@/lib/play-store";
 import { COLORS } from "@/lib/constants";
 
 const CONNECTION_K = 2;
@@ -82,6 +83,10 @@ export function Scene({ reducedMotion, settings }: { reducedMotion: boolean; set
   const lineRef = useRef<THREE.LineSegments>(null);
   // First frame snaps the camera and lift to their targets; after that they ease.
   const settled = useRef(false);
+  // The scene's own slow turn and the eased pointer parallax, kept apart from
+  // the visitor's rotation so the three can simply be summed.
+  const autoYaw = useRef(0);
+  const parallax = useRef({ x: 0, z: 0 });
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const positionsCache = useMemo(() => new Float32Array(NODE_COUNT * 3), []);
@@ -135,14 +140,14 @@ export function Scene({ reducedMotion, settings }: { reducedMotion: boolean; set
   );
 
   useFrame(({ camera, scene, size }, delta) => {
-    const { currentIdx, nextIdx, t, groupOpacity, dim, finale, time } = frame;
+    const { currentIdx, nextIdx, sceneT, fromKey, toKey, t, groupOpacity, dim, finale, playness, zoom, time } = frame;
 
-    const from = formationFor(SCENE_ORDER[currentIdx]);
-    const to = formationFor(SCENE_ORDER[nextIdx]);
+    const from = formationFor(fromKey);
+    const to = formationFor(toKey);
     // Snap edge topology at the transition midpoint — cheaper than
     // cross-fading two line sets. The links dip to zero at that instant
     // (see `snap` below), so the swap is never visible.
-    const connections = t < 0.5 ? connectionsFor(SCENE_ORDER[currentIdx]) : connectionsFor(SCENE_ORDER[nextIdx]);
+    const connections = t < 0.5 ? connectionsFor(fromKey) : connectionsFor(toKey);
     const e = t * t * (3 - 2 * t);
     // On phones body text spans the whole backdrop, so content scenes sit lower.
     const content = settings.compact ? THREE.MathUtils.lerp(0.55, 1, dim * dim) : 1;
@@ -189,13 +194,22 @@ export function Scene({ reducedMotion, settings }: { reducedMotion: boolean; set
       lineRef.current.visible = opacity > 0.004;
     }
 
-    // --- Group idle rotation, base tilt + pointer parallax ---
+    // --- Rotation = the scene's own slow turn + base tilt + pointer parallax
+    //     + whatever the visitor has dragged (lib/play-store). Euler order is
+    //     XYZ, so the visitor's pitch is applied last, in the camera's frame:
+    //     dragging down always tips the top toward you, however far it has turned. ---
+    stepOrbit(Math.min(delta, 0.1), playness > 0.5, reducedMotion);
     if (groupRef.current) {
-      groupRef.current.rotation.y += delta * (reducedMotion ? 0 : 0.045);
-      const targetRx = BASE_TILT_X + scrollState.pointerY * 0.12;
-      const targetRz = BASE_TILT_Z + scrollState.pointerX * 0.08;
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, targetRx, 0.04);
-      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, targetRz, 0.04);
+      // Hands off while it's being held; in the playground the spin is a toggle.
+      const spinning = orbit.dragging || reducedMotion ? 0 : THREE.MathUtils.lerp(1, play.spin ? 1 : 0, playness);
+      autoYaw.current += delta * 0.045 * spinning;
+      parallax.current.x = THREE.MathUtils.lerp(parallax.current.x, scrollState.pointerY * 0.12, 0.04);
+      parallax.current.z = THREE.MathUtils.lerp(parallax.current.z, scrollState.pointerX * 0.08, 0.04);
+      groupRef.current.rotation.set(
+        BASE_TILT_X + parallax.current.x + orbit.pitch,
+        autoYaw.current + orbit.yaw,
+        BASE_TILT_Z + parallax.current.z
+      );
     }
 
     // --- Camera: scene table, scaled to the viewport's aspect ---
@@ -204,9 +218,11 @@ export function Scene({ reducedMotion, settings }: { reducedMotion: boolean; set
     const camFrom = CAMERA_POS[currentIdx];
     const camTo = CAMERA_POS[nextIdx];
     const approach = currentIdx === 0 && !reducedMotion ? scrollState.heroApproach * 0.9 : 0;
-    const cx = THREE.MathUtils.lerp(camFrom[0], camTo[0], t);
-    const cy = THREE.MathUtils.lerp(camFrom[1], camTo[1], t);
-    const cz = (THREE.MathUtils.lerp(camFrom[2], camTo[2], t) - approach) * fit;
+    const cx = THREE.MathUtils.lerp(camFrom[0], camTo[0], sceneT);
+    const cy = THREE.MathUtils.lerp(camFrom[1], camTo[1], sceneT);
+    // Playground zoom: -1..1 maps to 1.4x..0.62x the distance.
+    const zoomFactor = zoom >= 0 ? 1 - zoom * 0.38 : 1 - zoom * 0.4;
+    const cz = (THREE.MathUtils.lerp(camFrom[2], camTo[2], sceneT) - approach) * fit * zoomFactor;
     // Without the snap, a phone would open on the desktop framing and visibly zoom out.
     const ease = settled.current ? 0.05 : 1;
     camera.position.x = THREE.MathUtils.lerp(camera.position.x, cx + scrollState.pointerX * 0.15, ease);
@@ -222,19 +238,23 @@ export function Scene({ reducedMotion, settings }: { reducedMotion: boolean; set
       const portrait = settings.compact ? THREE.MathUtils.clamp((1 - aspect) / 0.5, 0, 1) : 0;
       const halfHeight = Math.tan(THREE.MathUtils.degToRad(45 / 2)) * cz;
       const sink = finale * finale * (3 - 2 * finale);
-      const lift = portrait * 0.46 * halfHeight * (1 - sink) - 0.7 * halfHeight * sink;
+      // In the playground the title sits above and the controls below, so the
+      // core belongs in the middle on every layout.
+      const heroLift = THREE.MathUtils.lerp(0.46, 0.1, playness);
+      const lift = portrait * heroLift * halfHeight * (1 - sink) - 0.7 * halfHeight * sink;
       liftRef.current.position.y = THREE.MathUtils.lerp(liftRef.current.position.y, lift, settled.current ? 0.08 : 1);
     }
     settled.current = true;
 
-    // --- Reflections glide across the glass with scroll and pointer (free: it's one matrix) ---
-    if (!reducedMotion) {
-      scene.environmentRotation.set(
-        scrollState.pointerY * 0.25,
-        scrollState.master * 0.7 + time * 0.04 + scrollState.pointerX * 0.4,
-        0
-      );
-    }
+    // --- Reflections glide across the glass with scroll, pointer and the
+    //     visitor's rotation (free: it's one matrix). Under reduced motion only
+    //     their own drag moves them. ---
+    const ambient = reducedMotion ? 0 : 1;
+    scene.environmentRotation.set(
+      scrollState.pointerY * 0.25 * ambient + orbit.pitch * 0.6,
+      (scrollState.master * 0.7 + time * 0.04 + scrollState.pointerX * 0.4) * ambient + orbit.yaw,
+      0
+    );
   });
 
   return (

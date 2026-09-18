@@ -6,12 +6,15 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { LAST_SCENE, scrollState } from "@/lib/scroll-store";
+import { orbit } from "@/lib/play-store";
+import { frame } from "./scene-mix";
 
 // A distant shell of tiny points behind the Intelligence Core. Cheap (one
 // draw call), deterministic, and it drifts very slowly so the hero never
 // feels static. Fades out as the page scrolls into content-heavy sections.
 export function Starfield({ count = 1400, reducedMotion }: { count?: number; reducedMotion: boolean }) {
   const ref = useRef<THREE.Points>(null);
+  const drift = useRef({ x: 0, y: 0 });
 
   const geometry = useMemo(() => {
     let seed = 4242;
@@ -83,14 +86,19 @@ export function Starfield({ count = 1400, reducedMotion }: { count?: number; red
   useFrame(({ gl }, delta) => {
     if (!ref.current) return;
     if (!reducedMotion) {
-      ref.current.rotation.y += delta * 0.008;
-      ref.current.rotation.x += delta * 0.003;
+      drift.current.y += delta * 0.008;
+      drift.current.x += delta * 0.003;
       material.uniforms.uTime.value += delta;
     }
+    // A fraction of the visitor's rotation: distant things turn less, which is
+    // what makes dragging feel like turning a world rather than an object.
+    ref.current.rotation.y = drift.current.y + orbit.yaw * 0.35;
+    ref.current.rotation.x = drift.current.x + orbit.pitch * 0.35;
     material.uniforms.uPixelRatio.value = gl.getPixelRatio();
     // Bright in the hero and finale, faint through the middle of the page.
     const m = scrollState.master;
-    const target = m < 1 ? 0.9 - m * 0.55 : m > LAST_SCENE - 1 ? 0.35 + (m - (LAST_SCENE - 1)) * 0.55 : 0.35;
+    const story = m < 1 ? 0.9 - m * 0.55 : m > LAST_SCENE - 1 ? 0.35 + (m - (LAST_SCENE - 1)) * 0.55 : 0.35;
+    const target = Math.max(story, 0.35 + 0.55 * frame.playness);
     material.uniforms.uOpacity.value = THREE.MathUtils.lerp(material.uniforms.uOpacity.value, target, 0.05);
   });
 

@@ -53,7 +53,8 @@ const FINALE: OrbitSet = [
 ];
 
 // One entry per SCENE_ORDER index.
-const ORBIT_SPECS: OrbitSet[] = [HERO, CONTENT, CONTENT, CONTENT, LABS, DORMANT, DORMANT, DORMANT, FINALE];
+// The playground is a hero moment, so it gets the hero's orbits back.
+const ORBIT_SPECS: OrbitSet[] = [HERO, CONTENT, CONTENT, CONTENT, LABS, HERO, DORMANT, DORMANT, DORMANT, FINALE];
 
 // Shared by the rings and the comets. Uniform arrays are indexed by aIdx.
 const ORBIT_GLSL = /* glsl */ `
@@ -291,7 +292,7 @@ export function Orbitals({ reducedMotion }: { reducedMotion: boolean }) {
   );
 
   useFrame(({ gl, size }, delta) => {
-    const { currentIdx, nextIdx, t, groupOpacity, glowOpacity, velocity } = frame;
+    const { currentIdx, nextIdx, sceneT: t, groupOpacity, glowOpacity, velocity } = frame;
     const from = ORBIT_SPECS[currentIdx];
     const to = ORBIT_SPECS[nextIdx];
     const e = t * t * (3 - 2 * t);

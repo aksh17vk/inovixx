@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import type { SceneName } from "@/lib/scroll-store";
+import { FORMATION_KEYS, type FormationKey } from "@/lib/scroll-store";
 
 export const NODE_COUNT = 42;
 
@@ -115,7 +115,7 @@ function buildFinal(): Vector3[] {
   return fibonacciSphere(NODE_COUNT, 0.42, 0.2, rand);
 }
 
-export const FORMATIONS: Record<Exclude<SceneName, "dormant">, Vector3[]> = {
+export const FORMATIONS: Record<FormationKey, Vector3[]> = {
   core: buildCore(),
   broken: buildBroken(),
   products: buildProducts(),
@@ -124,10 +124,10 @@ export const FORMATIONS: Record<Exclude<SceneName, "dormant">, Vector3[]> = {
   final: buildFinal(),
 };
 
-// "dormant" reuses the labs formation (frozen) while the group fades out.
-export function formationFor(scene: SceneName): Vector3[] {
-  if (scene === "dormant") return FORMATIONS.labs;
-  return FORMATIONS[scene];
+// Scenes that aren't formations themselves (dormant, playground) are resolved
+// to a key in scene-mix.ts, so everything here deals in formations only.
+export function formationFor(key: FormationKey): Vector3[] {
+  return FORMATIONS[key];
 }
 
 // Per-scene connection topology built from proximity within that formation,
@@ -152,7 +152,7 @@ export function connectionsForFormation(points: Vector3[], k: number): [number, 
 }
 
 const CONNECTION_K = 2;
-export const CONNECTIONS: Record<Exclude<SceneName, "dormant">, [number, number][]> = {
+export const CONNECTIONS: Record<FormationKey, [number, number][]> = {
   core: connectionsForFormation(FORMATIONS.core, CONNECTION_K),
   broken: connectionsForFormation(FORMATIONS.broken, CONNECTION_K),
   products: connectionsForFormation(FORMATIONS.products, CONNECTION_K),
@@ -161,9 +161,8 @@ export const CONNECTIONS: Record<Exclude<SceneName, "dormant">, [number, number]
   final: connectionsForFormation(FORMATIONS.final, CONNECTION_K),
 };
 
-export function connectionsFor(scene: SceneName): [number, number][] {
-  if (scene === "dormant") return CONNECTIONS.labs;
-  return CONNECTIONS[scene];
+export function connectionsFor(key: FormationKey): [number, number][] {
+  return CONNECTIONS[key];
 }
 
 // ---------------------------------------------------------------------------
@@ -176,7 +175,7 @@ export function connectionsFor(scene: SceneName): [number, number][] {
 // particle i in the next.
 // ---------------------------------------------------------------------------
 
-type ParticleScene = Exclude<SceneName, "dormant">;
+type ParticleScene = FormationKey;
 
 // Separate seed per scene so a formation never depends on generation order.
 const PARTICLE_SEEDS: Record<ParticleScene, number> = {
@@ -191,13 +190,12 @@ const PARTICLE_SEEDS: Record<ParticleScene, number> = {
 // Formations that are rotationally symmetric about the group's Y axis. The
 // particle shader spins these in place (a differential, galaxy-like rotation)
 // without changing their silhouette; the others must hold still.
-export const SPINNING_SCENES: Record<SceneName, boolean> = {
+export const SPINNING_SCENES: Record<FormationKey, boolean> = {
   core: true,
   broken: false,
   products: false,
   technology: true,
   labs: false,
-  dormant: false,
   final: true,
 };
 
@@ -309,8 +307,7 @@ const PARTICLE_BUILDERS: Record<ParticleScene, (rng: () => number, u: number) =>
 
 const particleCache = new Map<string, Float32Array>();
 
-export function particleFormation(scene: SceneName, count: number): Float32Array {
-  const key: ParticleScene = scene === "dormant" ? "labs" : scene;
+export function particleFormation(key: FormationKey, count: number): Float32Array {
   const cacheKey = `${key}:${count}`;
   const cached = particleCache.get(cacheKey);
   if (cached) return cached;
@@ -351,7 +348,7 @@ export function particleFormation(scene: SceneName, count: number): Float32Array
 // boundary mid-scroll is a cache hit instead of a main-thread stall. Returns a
 // cancel function.
 export function prewarmParticleFormations(count: number): () => void {
-  const scenes = Object.keys(PARTICLE_BUILDERS) as ParticleScene[];
+  const scenes = FORMATION_KEYS;
   const hasIdle = typeof window.requestIdleCallback === "function";
   let cancelled = false;
   let handle = 0;

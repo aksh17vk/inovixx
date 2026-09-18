@@ -14,10 +14,11 @@ const SETTLE_POINTS: { id: string; index: number }[] = [
   { id: "products", index: 2 }, // broken -> products
   { id: "technology", index: 3 }, // products -> technology
   { id: "labs", index: 4 }, // technology -> labs
-  { id: "principles", index: 5 }, // labs -> dormant
-  { id: "solutions", index: 6 }, // dormant -> dormant
-  { id: "about", index: 7 }, // dormant -> dormant
-  { id: "final", index: 8 }, // dormant -> final
+  { id: "playground", index: 5 }, // labs -> playground
+  { id: "principles", index: 6 }, // playground -> dormant
+  { id: "solutions", index: 7 }, // dormant -> dormant
+  { id: "about", index: 8 }, // dormant -> dormant
+  { id: "final", index: 9 }, // dormant -> final
 ];
 
 // `motion` gates only the hero camera dolly. The section triggers always run:

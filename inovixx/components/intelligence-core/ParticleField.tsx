@@ -8,7 +8,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { SPINNING_SCENES, particleFormation, prewarmParticleFormations } from "./formations";
 import { frame } from "./scene-mix";
-import { SCENE_ORDER, scrollState } from "@/lib/scroll-store";
+import { scrollState, type FormationKey } from "@/lib/scroll-store";
 import { COLORS } from "@/lib/constants";
 
 // Light budget is tuned at this count; other counts rescale size and alpha so
@@ -38,6 +38,8 @@ const VERTEX = /* glsl */ `
   uniform float uSize;
   uniform float uFocus;
   uniform float uDrift;
+  uniform float uEnergy;
+  uniform float uPulse;
   uniform vec2 uPointer;
   uniform float uPointerStrength;
   uniform vec3 uColorA;
@@ -96,6 +98,18 @@ const VERTEX = /* glsl */ `
     p.xz = mat2(ic, -is, is, ic) * p.xz;
     p *= 1.0 + (1.0 - ie) * (2.2 + aSeed.x * 3.0);
 
+    // Pulse: a shell of displacement racing outward from the core. uPulse is
+    // the age in seconds; at rest it is large, both exponentials underflow to
+    // a clean 0.0, and no branch is needed for "no pulse".
+    // Squared by hand, NOT pow(dr, 2.0): dr is negative for every particle
+    // inside the shell — and for ALL of them at rest — and pow() of a negative
+    // base is undefined in GLSL. ANGLE/D3D happens to cope; plenty of phone
+    // GPUs return NaN, which would erase the whole field, on every page.
+    float pr = length(p);
+    float dr = pr - uPulse * 5.5;
+    float shock = exp(-dr * dr * 2.2) * exp(-uPulse);
+    p += (p / max(pr, 1e-4)) * shock * 0.6;
+
     // Ambient flow field.
     float ph = aSeed.y * 6.2831853;
     vec3 flow = vec3(
@@ -103,7 +117,7 @@ const VERTEX = /* glsl */ `
       cos(uTime * 0.27 + p.z * 1.3 + ph * 1.3),
       sin(uTime * 0.23 + p.x * 1.5 + ph * 0.7)
     );
-    p += flow * 0.05 * uDrift;
+    p += flow * (0.025 + 0.05 * uEnergy) * uDrift;
 
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
@@ -125,6 +139,8 @@ const VERTEX = /* glsl */ `
     px *= 1.0 + speed * 0.3;
 
     float alpha = uOpacity * (0.3 + 0.7 * aSeed.x) * twinkle * depthFade * keep * ie;
+    alpha *= (0.8 + 0.4 * uEnergy) * (1.0 + shock * 2.0);
+    px *= 1.0 + shock * 0.8;
 
     #ifdef USE_DOF
       // Out-of-focus points grow into soft bokeh discs and spread their light.
@@ -142,7 +158,7 @@ const VERTEX = /* glsl */ `
     float r = length(p);
     vec3 c = mix(uColorA, uColorB, smoothstep(0.8, 3.4, r));
     c = mix(c, uColorC, step(0.93, aSeed.z));
-    c = mix(c, vec3(0.75, 1.0, 1.0), speed * 0.6);
+    c = mix(c, vec3(0.75, 1.0, 1.0), clamp(speed * 0.6 + shock, 0.0, 1.0));
     // A few of the largest points whiten slightly and run past 1.0 so they
     // clear the bloom threshold; saturated brand colours alone never would.
     // Kept rare and only lightly whitened — otherwise, at small point sizes,
@@ -181,9 +197,9 @@ export function ParticleField({
   reducedMotion: boolean;
 }) {
   const pointsRef = useRef<THREE.Points>(null);
-  const loaded = useRef<{ from: number; to: number; geometry: THREE.BufferGeometry | null }>({
-    from: -1,
-    to: -1,
+  const loaded = useRef<{ from: FormationKey | null; to: FormationKey | null; geometry: THREE.BufferGeometry | null }>({
+    from: null,
+    to: null,
     geometry: null,
   });
   const pointer = useRef(new THREE.Vector2(0, 0));
@@ -227,6 +243,8 @@ export function ParticleField({
           uSize: { value: 12 },
           uFocus: { value: 6.3 },
           uDrift: { value: 1 },
+          uEnergy: { value: 0.5 },
+          uPulse: { value: 99 },
           uPointer: { value: new THREE.Vector2(0, 0) },
           uPointerStrength: { value: 0 },
           uColorA: { value: new THREE.Color(COLORS.violetSoft) },
@@ -248,23 +266,24 @@ export function ParticleField({
   useFrame(({ gl, camera }, delta) => {
     const points = pointsRef.current;
     if (!points) return;
-    const { currentIdx, nextIdx, t, groupOpacity, dim, velocity, time } = frame;
+    const { fromKey, toKey, t, groupOpacity, dim, velocity, time, energy, pulseAge } = frame;
     const u = material.uniforms;
 
-    // Swap formation buffers only when the scroll crosses a scene boundary —
-    // or when the geometry itself is new (a particle-count change), checked
-    // here rather than in an effect so empty buffers are never drawn.
+    // Swap formation buffers only when the morph's endpoints change (a scene
+    // boundary, or a pick in the playground) — or when the geometry itself is
+    // new (a particle-count change), checked here rather than in an effect so
+    // empty buffers are never drawn.
     const stale = loaded.current;
-    if (stale.geometry !== geometry || stale.from !== currentIdx || stale.to !== nextIdx) {
+    if (stale.geometry !== geometry || stale.from !== fromKey || stale.to !== toKey) {
       const from = geometry.getAttribute("position") as THREE.BufferAttribute;
       const to = geometry.getAttribute("aTo") as THREE.BufferAttribute;
-      (from.array as Float32Array).set(particleFormation(SCENE_ORDER[currentIdx], count));
-      (to.array as Float32Array).set(particleFormation(SCENE_ORDER[nextIdx], count));
+      (from.array as Float32Array).set(particleFormation(fromKey, count));
+      (to.array as Float32Array).set(particleFormation(toKey, count));
       from.needsUpdate = true;
       to.needsUpdate = true;
-      u.uSpinFrom.value = SPINNING_SCENES[SCENE_ORDER[currentIdx]] ? 1 : 0;
-      u.uSpinTo.value = SPINNING_SCENES[SCENE_ORDER[nextIdx]] ? 1 : 0;
-      loaded.current = { from: currentIdx, to: nextIdx, geometry };
+      u.uSpinFrom.value = SPINNING_SCENES[fromKey] ? 1 : 0;
+      u.uSpinTo.value = SPINNING_SCENES[toKey] ? 1 : 0;
+      loaded.current = { from: fromKey, to: toKey, geometry };
     }
 
     // No fly-in under reduced motion: the field is simply there.
@@ -277,6 +296,8 @@ export function ParticleField({
     u.uVelocity.value = velocity;
     u.uPixelRatio.value = gl.getPixelRatio();
     u.uDrift.value = reducedMotion ? 0 : 1;
+    u.uEnergy.value = energy;
+    u.uPulse.value = pulseAge;
     u.uFocus.value = camera.position.length();
 
     // Keep total light roughly constant across particle counts.

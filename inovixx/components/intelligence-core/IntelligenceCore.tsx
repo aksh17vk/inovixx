@@ -14,6 +14,9 @@ import {
   type QualityLevel,
 } from "./quality";
 import { setPointer } from "@/lib/scroll-store";
+import { orbit } from "@/lib/play-store";
+import { useSceneDrag } from "./useSceneDrag";
+import { frame } from "./scene-mix";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useDeviceTier, type DeviceTier } from "@/hooks/useDeviceTier";
 import { StaticCoreFallback } from "./StaticCoreFallback";
@@ -55,10 +58,15 @@ export function IntelligenceCore() {
 
   const renders = ready && tier !== "fallback";
   const displayFps = useDisplayFps(renders && !forced);
+  // Drag to rotate — finger on touch screens, press-and-hold with the mouse.
+  useSceneDrag(renders);
 
   useEffect(() => {
     if (tier !== "desktop" || reducedMotion) return;
     const onMove = (e: MouseEvent) => {
+      // While the scene is being held, the hand is steering it — parallax
+      // chasing the same cursor would fight the drag.
+      if (orbit.dragging) return;
       const x = (e.clientX / window.innerWidth) * 2 - 1;
       const y = (e.clientY / window.innerHeight) * 2 - 1;
       setPointer(x, y);
@@ -80,7 +88,11 @@ export function IntelligenceCore() {
 
   const demote = () => {
     const next = taken + 1;
-    rememberDemotions(tier, next);
+    // Step down now either way — but only remember it if it happened during the
+    // normal scroll story. In the playground the visitor can max out zoom and
+    // energy, the scene's fill-rate worst case; a dip there shouldn't cost them
+    // a lower rung across the whole site for the next week.
+    if (frame.playness < 0.5) rememberDemotions(tier, next);
     setDemotions((d) => ({ ...d, [tier]: next }));
   };
 

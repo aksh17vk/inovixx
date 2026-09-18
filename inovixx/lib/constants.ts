@@ -34,6 +34,7 @@ export const NAV_LINKS = [
   { label: "Products", href: "/#products" },
   { label: "Technology", href: "/#technology" },
   { label: "Labs", href: "/#labs" },
+  { label: "Playground", href: "/#playground" },
   { label: "Solutions", href: "/#solutions" },
   { label: "About", href: "/#about" },
 ];

@@ -10,6 +10,9 @@ const sectionId = (href: string) => href.split("#")[1] ?? "";
 
 // Floating capsule nav. It sits over the hero, tightens into a glass pill
 // once the page is scrolled, and tracks which section is in view.
+//
+// The inline nav appears from `lg`, not `md`: logo + six links + the CTA need
+// ~800px, so on a 768px tablet they would overflow the bar.
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -60,7 +63,7 @@ export function Navbar() {
   // While the menu is open: Escape closes it (and hands focus back to the
   // toggle), and growing past the mobile breakpoint closes it too — otherwise
   // rotating a phone with the menu open leaves the page scroll-locked behind
-  // an overlay that `md:hidden` has just removed.
+  // an overlay that `lg:hidden` has just removed.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -68,7 +71,7 @@ export function Navbar() {
       setOpen(false);
       toggleRef.current?.focus();
     };
-    const desktop = window.matchMedia("(min-width: 768px)");
+    const desktop = window.matchMedia("(min-width: 1024px)");
     const onBreakpoint = () => {
       if (desktop.matches) setOpen(false);
     };
@@ -99,7 +102,7 @@ export function Navbar() {
           {SITE.name}
         </Link>
 
-        <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+        <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
           {NAV_LINKS.map((link) => {
             const isActive = active === sectionId(link.href);
             return (
@@ -120,7 +123,7 @@ export function Navbar() {
           })}
         </nav>
 
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <MagneticButton href="/#contact" variant={scrolled ? "solid" : "ghost"} className="!py-2 !text-[13px]">
             Let&rsquo;s Talk
           </MagneticButton>
@@ -133,7 +136,7 @@ export function Navbar() {
           aria-expanded={open}
           aria-controls="mobile-menu"
           aria-label={open ? "Close menu" : "Open menu"}
-          className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 md:hidden"
+          className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 lg:hidden"
         >
           <span
             className={`h-px w-5 bg-fg transition-transform duration-300 ${open ? "translate-y-[3.5px] rotate-45" : ""}`}
@@ -153,7 +156,8 @@ export function Navbar() {
         id="mobile-menu"
         inert={!open}
         data-lenis-prevent
-        className={`fixed inset-0 z-[-1] flex flex-col overflow-y-auto overscroll-contain bg-bg/95 px-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-24 backdrop-blur-xl transition-opacity duration-400 md:hidden ${
+        data-no-orbit
+        className={`fixed inset-0 z-[-1] flex flex-col overflow-y-auto overscroll-contain bg-bg/95 px-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-24 backdrop-blur-xl transition-opacity duration-400 lg:hidden ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
