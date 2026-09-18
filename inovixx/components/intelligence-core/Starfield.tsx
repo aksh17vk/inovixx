@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/immutability */
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { LAST_SCENE, scrollState } from "@/lib/scroll-store";
@@ -13,7 +13,7 @@ import { LAST_SCENE, scrollState } from "@/lib/scroll-store";
 export function Starfield({ count = 1400, reducedMotion }: { count?: number; reducedMotion: boolean }) {
   const ref = useRef<THREE.Points>(null);
 
-  const { positions, sizes } = useMemo(() => {
+  const geometry = useMemo(() => {
     let seed = 4242;
     const rand = () => {
       seed = (seed * 16807) % 2147483647;
@@ -22,25 +22,21 @@ export function Starfield({ count = 1400, reducedMotion }: { count?: number; red
     const positions = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      // Uniform on a thick spherical shell, radius 12–24.
+      // Uniform on a thick spherical shell, radius 14–28 — always behind the network.
       const u = rand() * 2 - 1;
       const theta = rand() * Math.PI * 2;
-      const r = 12 + rand() * 12;
+      const r = 14 + rand() * 14;
       const s = Math.sqrt(1 - u * u);
       positions[i * 3] = r * s * Math.cos(theta);
       positions[i * 3 + 1] = r * u;
       positions[i * 3 + 2] = r * s * Math.sin(theta);
       sizes[i] = 0.5 + rand() * 1.2;
     }
-    return { positions, sizes };
-  }, [count]);
-
-  const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
     return geo;
-  }, [positions, sizes]);
+  }, [count]);
 
   const material = useMemo(
     () =>
@@ -62,7 +58,7 @@ export function Starfield({ count = 1400, reducedMotion }: { count?: number; red
             vec4 mv = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mv;
             vTwinkle = 0.65 + 0.35 * sin(uTime * 0.8 + position.x * 3.1 + position.y * 2.3);
-            gl_PointSize = aSize * uPixelRatio * (70.0 / -mv.z);
+            gl_PointSize = clamp(aSize * uPixelRatio * (70.0 / -mv.z), 1.0, 6.0 * uPixelRatio);
           }
         `,
         fragmentShader: /* glsl */ `
@@ -71,12 +67,18 @@ export function Starfield({ count = 1400, reducedMotion }: { count?: number; red
           void main() {
             float d = length(gl_PointCoord - 0.5);
             float a = smoothstep(0.5, 0.05, d);
-            gl_FragColor = vec4(vec3(0.92, 0.92, 1.0), a * uOpacity * vTwinkle);
+            // Kept under the bloom threshold: stars are backdrop, not emitters.
+            gl_FragColor = vec4(vec3(0.5, 0.5, 0.58), a * uOpacity * vTwinkle);
+            // Needed so the direct-to-canvas path matches the composer path.
+            #include <colorspace_fragment>
           }
         `,
       }),
     []
   );
+
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(() => () => material.dispose(), [material]);
 
   useFrame(({ gl }, delta) => {
     if (!ref.current) return;
@@ -88,7 +90,7 @@ export function Starfield({ count = 1400, reducedMotion }: { count?: number; red
     material.uniforms.uPixelRatio.value = gl.getPixelRatio();
     // Bright in the hero and finale, faint through the middle of the page.
     const m = scrollState.master;
-    const target = m < 1 ? 0.75 - m * 0.5 : m > LAST_SCENE - 1 ? 0.25 + (m - (LAST_SCENE - 1)) * 0.5 : 0.25;
+    const target = m < 1 ? 0.9 - m * 0.55 : m > LAST_SCENE - 1 ? 0.35 + (m - (LAST_SCENE - 1)) * 0.55 : 0.35;
     material.uniforms.uOpacity.value = THREE.MathUtils.lerp(material.uniforms.uOpacity.value, target, 0.05);
   });
 

@@ -38,6 +38,9 @@ export const scrollState = {
   // 0..1, how far the pointer has nudged the scene (parallax), decays each frame.
   pointerX: 0,
   pointerY: 0,
+  // false until the pointer has actually moved — (0, 0) is the screen centre,
+  // so pointer-reactive effects must not treat the initial value as a position.
+  pointerActive: false,
   // true once the user has scrolled at all — used to gate the entrance animation.
   hasScrolled: false,
 };
@@ -45,4 +48,5 @@ export const scrollState = {
 export function setPointer(x: number, y: number) {
   scrollState.pointerX = x;
   scrollState.pointerY = y;
+  scrollState.pointerActive = true;
 }
