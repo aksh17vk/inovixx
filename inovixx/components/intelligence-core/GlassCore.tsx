@@ -74,7 +74,7 @@ const NUCLEUS_FRAGMENT = /* glsl */ `
     col = mix(col, uC, fres * 0.6);
     // Whitened so the saturated palette can actually clear the bloom threshold.
     col = mix(col, vec3(1.0), 0.35);
-    gl_FragColor = vec4(col * (1.1 + 3.2 * fres + 1.6 * n) * uIntensity, 1.0);
+    gl_FragColor = vec4(col * (1.15 + 3.4 * fres + 1.7 * n) * uIntensity, 1.0);
     #include <colorspace_fragment>
   }
 `;
@@ -87,7 +87,7 @@ const RIM_FRAGMENT = /* glsl */ `
   varying vec3 vView;
   void main() {
     float f = pow(clamp(1.0 - dot(normalize(vNormal), normalize(vView)), 0.0, 1.0), 3.4);
-    vec3 c = mix(uInner, mix(uOuter, vec3(1.0), 0.35) * 1.5, f);
+    vec3 c = mix(uInner, mix(uOuter, vec3(1.0), 0.6) * 1.9, f);
     gl_FragColor = vec4(c, f * uOpacity);
     #include <colorspace_fragment>
   }
@@ -225,12 +225,12 @@ export function GlassCore({
       }
     }
     nucleusMaterial.uniforms.uTime.value = time;
-    nucleusMaterial.uniforms.uIntensity.value = 0.3 + glowOpacity * 0.75;
+    nucleusMaterial.uniforms.uIntensity.value = 0.3 + glowOpacity * 1.05;
 
-    if (lightRef.current) lightRef.current.intensity = 3 + glowOpacity * 20;
+    if (lightRef.current) lightRef.current.intensity = 3 + glowOpacity * 30;
 
-    rimMaterial.uniforms.uOpacity.value = 0.2 + glowOpacity * 0.6;
-    haloMaterial.uniforms.uOpacity.value = 0.04 + glowOpacity * 0.3;
+    rimMaterial.uniforms.uOpacity.value = 0.22 + glowOpacity * 1.0;
+    haloMaterial.uniforms.uOpacity.value = 0.045 + glowOpacity * 0.5;
     haloMaterial.uniforms.uTime.value = time;
 
     // The halo is a flat card — keep it square to the camera. Valid only
@@ -276,7 +276,7 @@ export function GlassCore({
             color="#e9e2ff"
             attenuationColor={COLORS.violetSoft}
             attenuationDistance={2.8}
-            envMapIntensity={1.6}
+            envMapIntensity={2.1}
           />
         ) : (
           <meshPhysicalMaterial
@@ -290,7 +290,7 @@ export function GlassCore({
             iridescence={1}
             iridescenceIOR={1.3}
             iridescenceThicknessRange={[120, 420]}
-            envMapIntensity={1.8}
+            envMapIntensity={2.3}
           />
         )}
       </mesh>

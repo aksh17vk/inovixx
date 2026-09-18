@@ -43,7 +43,10 @@ export function Effects({ antialias }: { antialias: boolean }) {
 
     if (!bloomRef.current) return;
     // Follows the story: calm behind content, flaring in the hero and finale.
-    const target = 0.25 + 1.0 * groupOpacity * (0.2 + 0.8 * dim) + glowOpacity * 0.55;
+    // The glowOpacity term is what the orb rides: high in the hero, playground
+    // and finale, ~0.08 behind content, so this brightens the shine without
+    // fogging body text.
+    const target = 0.25 + 1.0 * groupOpacity * (0.2 + 0.8 * dim) + glowOpacity * 0.85;
     bloomRef.current.intensity += (target - bloomRef.current.intensity) * 0.08;
   });
 

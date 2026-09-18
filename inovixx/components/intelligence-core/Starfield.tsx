@@ -12,7 +12,7 @@ import { frame } from "./scene-mix";
 // A distant shell of tiny points behind the Intelligence Core. Cheap (one
 // draw call), deterministic, and it drifts very slowly so the hero never
 // feels static. Fades out as the page scrolls into content-heavy sections.
-export function Starfield({ count = 1400, reducedMotion }: { count?: number; reducedMotion: boolean }) {
+export function Starfield({ count = 2300, reducedMotion }: { count?: number; reducedMotion: boolean }) {
   const ref = useRef<THREE.Points>(null);
   const drift = useRef({ x: 0, y: 0 });
 
@@ -24,6 +24,7 @@ export function Starfield({ count = 1400, reducedMotion }: { count?: number; red
     };
     const positions = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
+    const rates = new Float32Array(count);
     for (let i = 0; i < count; i++) {
       // Uniform on a thick spherical shell, radius 14–28 — always behind the network.
       const u = rand() * 2 - 1;
@@ -34,10 +35,14 @@ export function Starfield({ count = 1400, reducedMotion }: { count?: number; red
       positions[i * 3 + 1] = r * u;
       positions[i * 3 + 2] = r * s * Math.sin(theta);
       sizes[i] = 0.5 + rand() * 1.2;
+      // Per-star twinkle rate. Without it the whole sky pulses in lockstep,
+      // which reads as flicker rather than as stars once it is this quick.
+      rates[i] = 0.6 + rand() * 1.5;
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+    geo.setAttribute("aRate", new THREE.BufferAttribute(rates, 1));
     return geo;
   }, [count]);
 
@@ -54,13 +59,14 @@ export function Starfield({ count = 1400, reducedMotion }: { count?: number; red
         },
         vertexShader: /* glsl */ `
           attribute float aSize;
+          attribute float aRate;
           uniform float uTime;
           uniform float uPixelRatio;
           varying float vTwinkle;
           void main() {
             vec4 mv = modelViewMatrix * vec4(position, 1.0);
             gl_Position = projectionMatrix * mv;
-            vTwinkle = 0.65 + 0.35 * sin(uTime * 0.8 + position.x * 3.1 + position.y * 2.3);
+            vTwinkle = 0.62 + 0.38 * sin(uTime * aRate * 2.2 + position.x * 3.1 + position.y * 2.3);
             gl_PointSize = clamp(aSize * uPixelRatio * (70.0 / -mv.z), 1.0, 6.0 * uPixelRatio);
           }
         `,
@@ -86,8 +92,8 @@ export function Starfield({ count = 1400, reducedMotion }: { count?: number; red
   useFrame(({ gl }, delta) => {
     if (!ref.current) return;
     if (!reducedMotion) {
-      drift.current.y += delta * 0.008;
-      drift.current.x += delta * 0.003;
+      drift.current.y += delta * 0.03;
+      drift.current.x += delta * 0.011;
       material.uniforms.uTime.value += delta;
     }
     // A fraction of the visitor's rotation: distant things turn less, which is
