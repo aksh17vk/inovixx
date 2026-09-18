@@ -17,10 +17,14 @@ export const SCENE_ORDER: SceneName[] = [
   "products",
   "technology",
   "labs",
-  "dormant",
-  "dormant",
+  "dormant", // principles
+  "dormant", // solutions
+  "dormant", // about
   "final",
 ];
+
+// Index of the last scene — the final CTA convergence.
+export const LAST_SCENE = SCENE_ORDER.length - 1;
 
 export const scrollState = {
   // Continuous 0..(SCENE_ORDER.length - 1) master progress across the page.

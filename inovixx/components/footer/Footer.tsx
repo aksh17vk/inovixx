@@ -3,38 +3,59 @@ import { FOOTER_LINKS, SITE } from "@/lib/constants";
 
 export function Footer() {
   return (
-    <footer className="relative border-t border-line bg-bg px-6 py-14 md:px-10 md:py-16">
-      <div className="mx-auto flex max-w-7xl flex-col gap-10 md:flex-row md:items-start md:justify-between">
-        <div>
-          <span className="font-display text-sm font-semibold tracking-[0.22em] text-fg">{SITE.name}</span>
-          <p className="mt-3 max-w-xs text-sm text-fg-faint">{SITE.tagline}</p>
+    <footer className="relative overflow-hidden border-t border-line bg-bg px-6 pt-16 md:px-10 md:pt-20">
+      <div className="mx-auto flex max-w-7xl flex-col gap-12 md:flex-row md:items-start md:justify-between">
+        <div className="max-w-xs">
+          <span className="flex items-center gap-2.5 font-display text-sm font-semibold tracking-[0.22em] text-fg">
+            <span className="h-2 w-2 rounded-full bg-violet-soft" />
+            {SITE.name}
+          </span>
+          <p className="mt-4 text-sm text-fg-muted">{SITE.tagline}</p>
+          <p className="mt-2 text-sm text-fg-faint">AI products · intelligent systems · software.</p>
         </div>
 
-        <nav className="grid grid-cols-2 gap-x-10 gap-y-3 sm:grid-cols-3">
-          {FOOTER_LINKS.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="text-sm text-fg-muted transition-colors duration-300 hover:text-fg"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
-
-        <div className="flex gap-6">
-          <Link href="/privacy" className="text-sm text-fg-faint transition-colors duration-300 hover:text-fg">
-            Privacy
-          </Link>
-          <Link href="/terms" className="text-sm text-fg-faint transition-colors duration-300 hover:text-fg">
-            Terms
-          </Link>
+        <div className="grid grid-cols-2 gap-x-16 gap-y-3 sm:grid-cols-3">
+          <div className="flex flex-col gap-3">
+            <span className="font-mono-label text-[10px] text-fg-faint">SITE</span>
+            {FOOTER_LINKS.slice(0, 3).map((link) => (
+              <a key={link.label} href={link.href} className="text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
+                {link.label}
+              </a>
+            ))}
+          </div>
+          <div className="flex flex-col gap-3">
+            <span className="font-mono-label text-[10px] text-fg-faint">MORE</span>
+            {FOOTER_LINKS.slice(3).map((link) => (
+              <a key={link.label} href={link.href} className="text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
+                {link.label}
+              </a>
+            ))}
+          </div>
+          <div className="flex flex-col gap-3">
+            <span className="font-mono-label text-[10px] text-fg-faint">LEGAL</span>
+            <Link href="/privacy" className="text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
+              Privacy
+            </Link>
+            <Link href="/terms" className="text-sm text-fg-muted transition-colors duration-300 hover:text-fg">
+              Terms
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="mx-auto mt-12 max-w-7xl border-t border-line pt-6">
+      <div className="mx-auto mt-14 flex max-w-7xl items-center justify-between border-t border-line py-6">
         <p className="text-xs text-fg-faint">
           &copy; {new Date().getFullYear()} {SITE.name}. All rights reserved.
+        </p>
+        <a href="#hero" className="font-mono-label text-[10px] text-fg-faint transition-colors hover:text-fg">
+          BACK TO TOP &uarr;
+        </a>
+      </div>
+
+      {/* Giant wordmark, clipped at the bottom edge */}
+      <div aria-hidden="true" className="pointer-events-none mx-auto max-w-7xl select-none overflow-hidden">
+        <p className="translate-y-[28%] whitespace-nowrap text-center font-display text-[clamp(5rem,19vw,19rem)] font-semibold leading-none tracking-[-0.05em] text-transparent [-webkit-text-stroke:1px_rgba(244,243,248,0.08)]">
+          {SITE.name}
         </p>
       </div>
     </footer>

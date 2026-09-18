@@ -1,47 +1,69 @@
 import { CAPABILITIES } from "@/lib/constants";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionEyebrow } from "@/components/ui/SectionEyebrow";
+import { Marquee } from "@/components/ui/Marquee";
+import { CapabilityGlyph } from "./CapabilityGlyph";
 
 export function Capabilities() {
   return (
-    <section id="capabilities" className="relative min-h-[130vh] px-6 py-32 md:px-10 md:py-48">
-      <div className="mx-auto max-w-7xl rounded-[28px] bg-bg/55 p-6 backdrop-blur-sm sm:p-10 md:p-14">
-        <div className="grid gap-16 md:grid-cols-[1fr_1fr]">
+    <section id="capabilities" className="relative py-28 md:min-h-[130vh] md:py-40">
+      {/* Ticker */}
+      <Marquee className="border-y border-line py-5">
+        {CAPABILITIES.map((cap) => (
+          <span key={cap.key} className="flex items-center gap-8 pr-8">
+            <span className="font-display text-2xl font-medium tracking-tight text-fg md:text-3xl">{cap.title}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-violet-soft" />
+          </span>
+        ))}
+      </Marquee>
+
+      <div className="mx-auto mt-24 max-w-7xl px-6 md:mt-32 md:px-10">
+        <div className="grid gap-16 md:grid-cols-[1fr_1.15fr] md:gap-24">
           <div className="md:sticky md:top-32 md:self-start">
             <Reveal>
               <SectionEyebrow index="02" label="POWERED BY" />
             </Reveal>
             <Reveal delay={100}>
-              <h2 className="mt-6 font-display text-4xl font-medium uppercase leading-[0.95] tracking-tight sm:text-5xl md:text-6xl">
-                Core
+              <h2 className="display-xl mt-6 font-display font-medium text-fg">
+                One core.
                 <br />
-                Capabilities
+                <span className="text-fg-muted">Five working parts.</span>
               </h2>
             </Reveal>
             <Reveal delay={220}>
               <p className="mt-6 max-w-sm text-fg-muted">
-                One system, broken down into what it actually does. Each capability is a working part of
-                the same intelligence core.
+                Everything INOVIXX builds comes out of the same system. Break it apart and these are
+                the pieces you find.
               </p>
             </Reveal>
           </div>
 
-          <div className="flex flex-col gap-px md:mt-24">
+          <ol className="flex flex-col">
             {CAPABILITIES.map((cap, i) => (
-              <Reveal key={cap.key} delay={i * 90} className="border-t border-line py-8 first:border-t-0 md:py-10">
-                <div className="flex items-start justify-between gap-6">
+              <Reveal
+                key={cap.key}
+                as="li"
+                delay={i * 90}
+                className="group relative border-t border-line py-8 transition-colors duration-500 last:border-b hover:border-violet-soft/40 md:py-9"
+              >
+                <div className="grid grid-cols-[auto_1fr_auto] items-start gap-5 md:gap-8">
+                  <span className="font-mono-label pt-1 text-xs text-fg-faint">0{i + 1}</span>
                   <div>
-                    <span className="font-mono-label text-xs text-violet-soft">{cap.label}</span>
-                    <h3 className="mt-3 font-display text-2xl font-medium tracking-tight md:text-3xl">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono-label text-[11px] text-violet-soft">{cap.label}</span>
+                    </div>
+                    <h3 className="mt-2 font-display text-2xl font-medium tracking-tight text-fg transition-transform duration-500 group-hover:translate-x-1 md:text-[2rem]">
                       {cap.title}
                     </h3>
-                    <p className="mt-3 max-w-md text-sm text-fg-muted md:text-base">{cap.copy}</p>
+                    <p className="mt-2.5 max-w-md text-sm leading-relaxed text-fg-muted md:text-[15px]">{cap.copy}</p>
                   </div>
-                  <span className="font-mono-label shrink-0 text-xs text-fg-faint">0{i + 1}</span>
+                  <span className="text-fg-faint transition-colors duration-500 group-hover:text-violet-soft">
+                    <CapabilityGlyph kind={cap.key} />
+                  </span>
                 </div>
               </Reveal>
             ))}
-          </div>
+          </ol>
         </div>
       </div>
     </section>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "inovixx-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "inovixx", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

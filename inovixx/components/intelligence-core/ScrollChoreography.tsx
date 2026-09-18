@@ -13,9 +13,10 @@ const SETTLE_POINTS: { id: string; index: number }[] = [
   { id: "products", index: 2 }, // broken -> products
   { id: "technology", index: 3 }, // products -> technology
   { id: "labs", index: 4 }, // technology -> labs
-  { id: "solutions", index: 5 }, // labs -> dormant
-  { id: "about", index: 6 }, // dormant -> dormant
-  { id: "final", index: 7 }, // dormant -> final
+  { id: "principles", index: 5 }, // labs -> dormant
+  { id: "solutions", index: 6 }, // dormant -> dormant
+  { id: "about", index: 7 }, // dormant -> dormant
+  { id: "final", index: 8 }, // dormant -> final
 ];
 
 export function ScrollChoreography({ enabled }: { enabled: boolean }) {

@@ -11,24 +11,27 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { Sparkles } from "@react-three/drei";
 import { NODE_COUNT, connectionsFor, formationFor } from "./formations";
-import { SCENE_ORDER, scrollState } from "@/lib/scroll-store";
+import { Starfield } from "./Starfield";
+import { LAST_SCENE, SCENE_ORDER, scrollState } from "@/lib/scroll-store";
 import { COLORS } from "@/lib/constants";
 
 const CONNECTION_K = 2;
 const CONNECTION_COUNT = NODE_COUNT * CONNECTION_K;
 
-const BASE_OPACITY = [1, 1, 1, 1, 1, 0, 0, 0];
-const GLOW_BASE = [0.7, 0.16, 0.14, 0.16, 0.18, 0.08, 0.08, 0.08];
+// One entry per SCENE_ORDER index.
+const BASE_OPACITY = [1, 1, 1, 1, 1, 0, 0, 0, 0];
+const GLOW_BASE = [0.7, 0.16, 0.14, 0.16, 0.18, 0.08, 0.08, 0.08, 0.08];
 // How much of the network's opacity survives outside the hero/final "hero
 // moment" scenes — content-heavy sections keep the core as a faint backdrop
 // rather than a foreground object competing with text.
-const CONTENT_DIM = [1, 0.4, 0.4, 0.4, 0.4, 0, 0, 1];
+const CONTENT_DIM = [1, 0.4, 0.4, 0.4, 0.4, 0, 0, 0, 1];
 const CAMERA_POS: [number, number, number][] = [
   [0, 0, 6.3],
   [0, 0.35, 7.6],
   [0, 0, 7.1],
   [0.6, 0.3, 8.6],
   [0, 0.2, 8.2],
+  [0, 0, 8.2],
   [0, 0, 8.2],
   [0, 0, 8.2],
   [0, 0, 5.3],
@@ -40,18 +43,19 @@ function triangleRiseFall(t: number) {
 }
 
 function sceneMix(reducedMotion: boolean) {
-  const master = reducedMotion ? 0 : THREE.MathUtils.clamp(scrollState.master, 0, 7);
-  const currentIdx = Math.min(6, Math.floor(master));
-  const nextIdx = Math.min(7, currentIdx + 1);
+  const master = reducedMotion ? 0 : THREE.MathUtils.clamp(scrollState.master, 0, LAST_SCENE);
+  const currentIdx = Math.min(LAST_SCENE - 1, Math.floor(master));
+  const nextIdx = Math.min(LAST_SCENE, currentIdx + 1);
   const t = THREE.MathUtils.clamp(master - currentIdx, 0, 1);
 
   let groupOpacity: number;
   let glowOpacity: number;
   let dim: number;
-  if (currentIdx === 6) {
+  if (currentIdx === LAST_SCENE - 1) {
+    // Final convergence: the network rises back in, then settles.
     groupOpacity = triangleRiseFall(t);
     glowOpacity = THREE.MathUtils.lerp(0.08, 1, t);
-    dim = THREE.MathUtils.lerp(CONTENT_DIM[6], CONTENT_DIM[7], t);
+    dim = THREE.MathUtils.lerp(CONTENT_DIM[currentIdx], CONTENT_DIM[nextIdx], t);
   } else {
     groupOpacity = THREE.MathUtils.lerp(BASE_OPACITY[currentIdx], BASE_OPACITY[nextIdx], t);
     glowOpacity = THREE.MathUtils.lerp(GLOW_BASE[currentIdx], GLOW_BASE[nextIdx], t);
@@ -178,6 +182,7 @@ export function Scene({ reducedMotion }: { reducedMotion: boolean }) {
 
   return (
     <group ref={groupRef}>
+      <Starfield reducedMotion={reducedMotion} />
       <ambientLight intensity={0.35} color={COLORS.blueDeep} />
       <pointLight ref={glowLightRef} position={[0, 0, 0]} color={COLORS.violet} intensity={8} distance={9} decay={2} />
       <hemisphereLight args={[COLORS.violetSoft, COLORS.bg, 0.25]} />

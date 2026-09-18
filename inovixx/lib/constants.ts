@@ -30,10 +30,21 @@ export const COLORS = {
 export const NAV_LINKS = [
   { label: "Products", href: "#products" },
   { label: "Technology", href: "#technology" },
-  { label: "Solutions", href: "#solutions" },
   { label: "Labs", href: "#labs" },
+  { label: "Solutions", href: "#solutions" },
   { label: "About", href: "#about" },
 ];
+
+export const HERO = {
+  eyebrow: "AI PRODUCTS · INTELLIGENT SYSTEMS · SOFTWARE",
+  wordLeft: "Building",
+  wordRight: "Intelligence",
+  closing: "For what's next.",
+  lede:
+    "INOVIXX builds AI-powered products, agentic systems, and the software around them — from first prototype to something people actually use.",
+  primaryCta: { label: "Explore Products", href: "#products" },
+  secondaryCta: { label: "Inside Labs", href: "#labs" },
+} as const;
 
 export const CAPABILITIES = [
   {
@@ -77,6 +88,11 @@ export const PRODUCTS = [
     steps: ["Analyze", "Understand", "Plan", "Improve"],
     description:
       "SkillPilot AI reads a career the way a strategist would — resume, skills, and trajectory — and turns it into a concrete plan.",
+    highlights: [
+      "Reads resume, skills and trajectory as one profile",
+      "Turns gaps into a sequenced, concrete plan",
+      "Re-plans as the career actually moves",
+    ],
     cta: "Explore Product",
     status: "In development",
   },
@@ -88,6 +104,11 @@ export const PRODUCTS = [
     steps: ["Propose", "Evaluate", "Negotiate", "Decide"],
     description:
       "A system for agent-to-agent negotiation, strategy, and autonomous decision-making — built for the moment software has to act on its own.",
+    highlights: [
+      "Agents propose, counter and converge on outcomes",
+      "Strategy and constraints stay explicit and inspectable",
+      "Designed for software that has to decide without a human in the loop",
+    ],
     cta: "Explore Research",
     status: "Research",
   },
@@ -114,11 +135,36 @@ export const TECH_TAGS = [
 ] as const;
 
 export const LABS_ITEMS = [
-  { key: "research", label: "AI Research" },
-  { key: "experimental", label: "Experimental Projects" },
-  { key: "architectures", label: "New Architectures" },
-  { key: "swarm", label: "Engineering Swarm" },
-  { key: "future", label: "Future Products" },
+  { key: "research", label: "AI Research", detail: "Open questions in reasoning, memory and coordination." },
+  { key: "experimental", label: "Experimental Projects", detail: "Small builds that test one idea at a time." },
+  { key: "architectures", label: "New Architectures", detail: "System designs that don't fit today's templates." },
+  { key: "swarm", label: "Engineering Swarm", detail: "Many agents, one codebase, one outcome." },
+  { key: "future", label: "Future Products", detail: "What graduates from Labs into the product line." },
+] as const;
+
+// Positioning statements — how INOVIXX works, in its own words. These are
+// principles, not claims about results.
+export const PRINCIPLES = [
+  {
+    key: "ship",
+    statement: "Shipping beats announcing.",
+    detail: "A working prototype in someone's hands says more than a roadmap ever will.",
+  },
+  {
+    key: "systems",
+    statement: "Systems, not scripts.",
+    detail: "Software that reasons, coordinates and acts — designed as a system from day one.",
+  },
+  {
+    key: "honest",
+    statement: "Early, and honest about it.",
+    detail: "What's on this page is what exists. Products in development, research in progress.",
+  },
+  {
+    key: "research",
+    statement: "Research that becomes product.",
+    detail: "Labs exists to feed the product line, not to sit beside it.",
+  },
 ] as const;
 
 export const SOLUTIONS_ITEMS = [

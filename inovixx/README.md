@@ -30,21 +30,29 @@ npm run lint       # ESLint
 ```
 app/                     routes, layout, metadata, sitemap/robots
 components/
-  navigation/             Navbar
-  hero/                   Section 01
-  capabilities/           Section 02 — core breaks apart
-  products/               Section 03
-  technology/             Section 04
-  labs/                   Section 05
-  solutions/              Section 06
-  about/                  Section 07
-  final-cta/              Section 08
-  footer/                 Site footer
-  intelligence-core/       the persistent 3D scene + scroll choreography
-  ui/                     MagneticButton, Reveal, SectionEyebrow
+  navigation/             Navbar — floating glass pill, active-section tracking
+  hero/                   Section 01 — display words flank the core
+  capabilities/           Section 02 — ticker + numbered list; core breaks apart
+  products/               Section 03 — spotlight cards with animated SVG visuals
+  technology/             Section 04 — interactive six-layer stack diagram
+  labs/                   Section 05 — terminal-style tracks panel
+  principles/             Section 06 — editorial statements, word-by-word reveal
+  solutions/              Section 07
+  about/                  Section 08
+  final-cta/              Section 09
+  footer/                 Site footer with clipped giant wordmark
+  intelligence-core/      the persistent 3D scene (+ Starfield) and scroll choreography
+  ui/                     MagneticButton, Reveal, ScrollWords, SpotlightCard,
+                          Marquee, ScrollProgress, SectionEyebrow
 hooks/                    useLenis, useReducedMotion, useDeviceTier, useInView
 lib/                      constants.ts (copy + design tokens), scroll-store.ts
 ```
+
+Adding a section between existing ones? Give it an id, then add it to
+`SETTLE_POINTS` in `ScrollChoreography.tsx` and a matching entry in
+`SCENE_ORDER` (`lib/scroll-store.ts`) plus the per-scene arrays at the top of
+`Scene.tsx` — otherwise the core holds its previous formation at full
+opacity behind the new section.
 
 ### How the 3D scroll story works
 
