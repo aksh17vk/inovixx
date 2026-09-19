@@ -3,7 +3,7 @@ import { FOOTER_LINKS, SITE } from "@/lib/constants";
 
 export function Footer() {
   return (
-    <footer className="relative overflow-hidden border-t border-line bg-bg px-6 pt-16 md:px-10 md:pt-20">
+    <footer className="relative overflow-hidden border-t border-line bg-bg/40 px-6 pt-16 md:px-10 md:pt-20">
       <div className="mx-auto flex max-w-7xl flex-col gap-12 md:flex-row md:items-start md:justify-between">
         <div className="max-w-xs">
           <span className="flex items-center gap-2.5 font-display text-sm font-semibold tracking-[0.22em] text-fg">

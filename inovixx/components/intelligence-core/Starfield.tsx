@@ -5,14 +5,62 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { LAST_SCENE, scrollState } from "@/lib/scroll-store";
 import { orbit } from "@/lib/play-store";
 import { frame } from "./scene-mix";
 
-// A distant shell of tiny points behind the Intelligence Core. Cheap (one
-// draw call), deterministic, and it drifts very slowly so the hero never
-// feels static. Fades out as the page scrolls into content-heavy sections.
-export function Starfield({ count = 2300, reducedMotion }: { count?: number; reducedMotion: boolean }) {
+// The background sky. Deliberately calm: soft, twinkling points and nothing
+// more — the shine belongs to the Intelligence Core and its own stars (see the
+// sparkles in ParticleField), and a flashy sky competes with it.
+//
+// It is always there, though: its brightness never drops below 75% anywhere
+// on the page, and the sections that used to paint an opaque background over
+// the canvas are translucent now.
+//
+// The shell sits *around the camera*, so the sky reads the same on every
+// device and at every zoom — the camera pulls back up to 2x on phones, which
+// used to put it inside a shell centred on the origin.
+
+const COUNT = 4200;
+const RADIUS_MIN = 16;
+const RADIUS_MAX = 30;
+
+const VERTEX = /* glsl */ `
+  attribute float aSize;   // 0..1
+  attribute float aRate;   // twinkle speed
+  attribute vec3 aColor;
+
+  uniform float uTime;
+  uniform float uPixelRatio;
+  uniform float uSizeScale;
+
+  varying vec3 vColor;
+  varying float vTwinkle;
+
+  void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mv;
+    vTwinkle = 0.6 + 0.4 * sin(uTime * aRate + position.x * 3.1 + position.y * 2.3);
+    vColor = aColor;
+    float px = (0.6 + aSize * 1.4) * uSizeScale * uPixelRatio / max(-mv.z, 0.001);
+    gl_PointSize = clamp(px, 1.0, 6.0 * uPixelRatio);
+  }
+`;
+
+const FRAGMENT = /* glsl */ `
+  uniform float uOpacity;
+  varying vec3 vColor;
+  varying float vTwinkle;
+
+  void main() {
+    float d = length(gl_PointCoord - 0.5);
+    float a = smoothstep(0.5, 0.05, d);
+    // Kept under the bloom threshold: the sky is backdrop, not an emitter.
+    gl_FragColor = vec4(vColor, a * uOpacity * vTwinkle);
+    #include <colorspace_fragment>
+  }
+`;
+
+export function Starfield({ reducedMotion }: { reducedMotion: boolean }) {
   const ref = useRef<THREE.Points>(null);
   const drift = useRef({ x: 0, y: 0 });
 
@@ -22,66 +70,54 @@ export function Starfield({ count = 2300, reducedMotion }: { count?: number; red
       seed = (seed * 16807) % 2147483647;
       return (seed - 1) / 2147483646;
     };
-    const positions = new Float32Array(count * 3);
-    const sizes = new Float32Array(count);
-    const rates = new Float32Array(count);
-    for (let i = 0; i < count; i++) {
-      // Uniform on a thick spherical shell, radius 14–28 — always behind the network.
+    // Mostly blue-white, with a few stars in the site's violet and cyan —
+    // all muted, so none of them reads as a light source.
+    const white = new THREE.Color(0.62, 0.65, 0.74);
+    const violet = new THREE.Color(0.55, 0.49, 0.78);
+    const cyan = new THREE.Color(0.44, 0.7, 0.68);
+
+    const positions = new Float32Array(COUNT * 3);
+    const sizes = new Float32Array(COUNT);
+    const rates = new Float32Array(COUNT);
+    const colors = new Float32Array(COUNT * 3);
+    for (let i = 0; i < COUNT; i++) {
+      // Uniform on a thick shell around the camera.
       const u = rand() * 2 - 1;
       const theta = rand() * Math.PI * 2;
-      const r = 14 + rand() * 14;
+      const r = RADIUS_MIN + rand() * (RADIUS_MAX - RADIUS_MIN);
       const s = Math.sqrt(1 - u * u);
       positions[i * 3] = r * s * Math.cos(theta);
       positions[i * 3 + 1] = r * u;
       positions[i * 3 + 2] = r * s * Math.sin(theta);
-      sizes[i] = 0.5 + rand() * 1.2;
-      // Per-star twinkle rate. Without it the whole sky pulses in lockstep,
-      // which reads as flicker rather than as stars once it is this quick.
-      rates[i] = 0.6 + rand() * 1.5;
+      sizes[i] = rand();
+      // Per-star rate: a shared one makes the whole sky pulse in lockstep.
+      rates[i] = 1.3 + rand() * 3.3;
+      const hue = rand();
+      const c = hue < 0.75 ? white : hue < 0.9 ? violet : cyan;
+      colors.set([c.r, c.g, c.b], i * 3);
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
     geo.setAttribute("aRate", new THREE.BufferAttribute(rates, 1));
+    geo.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
     return geo;
-  }, [count]);
+  }, []);
 
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({
+        vertexShader: VERTEX,
+        fragmentShader: FRAGMENT,
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
         uniforms: {
-          uOpacity: { value: 0.75 },
+          uOpacity: { value: 0.9 },
           uTime: { value: 0 },
           uPixelRatio: { value: 1 },
+          uSizeScale: { value: 44 },
         },
-        vertexShader: /* glsl */ `
-          attribute float aSize;
-          attribute float aRate;
-          uniform float uTime;
-          uniform float uPixelRatio;
-          varying float vTwinkle;
-          void main() {
-            vec4 mv = modelViewMatrix * vec4(position, 1.0);
-            gl_Position = projectionMatrix * mv;
-            vTwinkle = 0.62 + 0.38 * sin(uTime * aRate * 2.2 + position.x * 3.1 + position.y * 2.3);
-            gl_PointSize = clamp(aSize * uPixelRatio * (70.0 / -mv.z), 1.0, 6.0 * uPixelRatio);
-          }
-        `,
-        fragmentShader: /* glsl */ `
-          uniform float uOpacity;
-          varying float vTwinkle;
-          void main() {
-            float d = length(gl_PointCoord - 0.5);
-            float a = smoothstep(0.5, 0.05, d);
-            // Kept under the bloom threshold: stars are backdrop, not emitters.
-            gl_FragColor = vec4(vec3(0.5, 0.5, 0.58), a * uOpacity * vTwinkle);
-            // Needed so the direct-to-canvas path matches the composer path.
-            #include <colorspace_fragment>
-          }
-        `,
       }),
     []
   );
@@ -89,23 +125,28 @@ export function Starfield({ count = 2300, reducedMotion }: { count?: number; red
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
 
-  useFrame(({ gl }, delta) => {
-    if (!ref.current) return;
+  useFrame(({ gl, camera }, delta) => {
+    const points = ref.current;
+    if (!points) return;
+    const u = material.uniforms;
+    const dt = Math.min(delta, 0.1);
+
     if (!reducedMotion) {
-      drift.current.y += delta * 0.03;
-      drift.current.x += delta * 0.011;
-      material.uniforms.uTime.value += delta;
+      drift.current.y += dt * 0.03;
+      drift.current.x += dt * 0.011;
+      u.uTime.value += dt;
     }
-    // A fraction of the visitor's rotation: distant things turn less, which is
-    // what makes dragging feel like turning a world rather than an object.
-    ref.current.rotation.y = drift.current.y + orbit.yaw * 0.35;
-    ref.current.rotation.x = drift.current.x + orbit.pitch * 0.35;
-    material.uniforms.uPixelRatio.value = gl.getPixelRatio();
-    // Bright in the hero and finale, faint through the middle of the page.
-    const m = scrollState.master;
-    const story = m < 1 ? 0.9 - m * 0.55 : m > LAST_SCENE - 1 ? 0.35 + (m - (LAST_SCENE - 1)) * 0.55 : 0.35;
-    const target = Math.max(story, 0.35 + 0.55 * frame.playness);
-    material.uniforms.uOpacity.value = THREE.MathUtils.lerp(material.uniforms.uOpacity.value, target, 0.05);
+    // The sky sits on the camera, like a skybox; the visitor's rotation turns
+    // it at a fraction, which is what makes a drag feel like turning a world.
+    points.position.copy(camera.position);
+    points.rotation.y = drift.current.y + orbit.yaw * 0.35;
+    points.rotation.x = drift.current.x + orbit.pitch * 0.35;
+    u.uPixelRatio.value = gl.getPixelRatio();
+
+    // Always there — never below 75% — and only a little brighter where the
+    // core is in full view.
+    const target = 0.75 + 0.15 * frame.dim;
+    u.uOpacity.value += (target - u.uOpacity.value) * (1 - Math.exp(-4 * dt));
   });
 
   return <points ref={ref} geometry={geometry} material={material} frustumCulled={false} />;

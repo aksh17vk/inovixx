@@ -6,6 +6,11 @@ import { Bloom, EffectComposer, SMAA } from "@react-three/postprocessing";
 import type { BloomEffect } from "postprocessing";
 import { frame } from "./scene-mix";
 
+const smooth = (lo: number, hi: number, x: number) => {
+  const t = Math.min(1, Math.max(0, (x - lo) / (hi - lo)));
+  return t * t * (3 - 2 * t);
+};
+
 // Selective HDR bloom. The threshold is deliberately high: saturated brand
 // colours sit at 0.2–0.4 linear luminance, so only emitters that whiten their
 // cores and push past 1.0 (nucleus, comet heads, hot particles, link pulses)
@@ -27,27 +32,31 @@ export function Effects({ antialias }: { antialias: boolean }) {
   // and blooming — at the old resolution. Folding DPR into the key rebuilds it.
   const dpr = useThree((s) => s.viewport.dpr);
   // Through Principles / Solutions / About only the starfield is visible, and
-  // nothing in it blooms. Rendering direct-to-canvas there skips the half-float
+  // its shine is drawn in the sprite, not by bloom. Rendering direct-to-canvas there skips the half-float
   // scene buffer and the whole mip chain. Safe to toggle because the canvas is
   // `flat` with no tone-mapping effect: both paths produce identical pixels.
   const [dormant, setDormant] = useState(false);
 
   useFrame(() => {
     const { groupOpacity, glowOpacity, dim } = frame;
+    const bloom = bloomRef.current;
 
-    // Hysteresis, so hovering on the boundary can't flap React state.
-    const asleep = groupOpacity < 0.004 && glowOpacity < 0.085;
-    const awake = groupOpacity > 0.02 || glowOpacity > 0.1;
-    if (!dormant && asleep) setDormant(true);
-    else if (dormant && awake) setDormant(false);
-
-    if (!bloomRef.current) return;
     // Follows the story: calm behind content, flaring in the hero and finale.
     // The glowOpacity term is what the orb rides: high in the hero, playground
     // and finale, ~0.08 behind content, so this brightens the shine without
-    // fogging body text.
-    const target = 0.25 + 1.0 * groupOpacity * (0.2 + 0.8 * dim) + glowOpacity * 0.85;
-    bloomRef.current.intensity += (target - bloomRef.current.intensity) * 0.08;
+    // fogging body text. On the way into the quiet sections it fades all the
+    // way to zero, so switching the composer off there is invisible — the
+    // sparkle stars bloom, and would otherwise visibly dim at the switch.
+    const presence = Math.max(smooth(0.004, 0.15, groupOpacity), smooth(0.085, 0.2, glowOpacity));
+    const target = (0.25 + 1.0 * groupOpacity * (0.2 + 0.8 * dim) + glowOpacity * 0.85) * presence;
+    if (bloom) bloom.intensity += (target - bloom.intensity) * 0.08;
+
+    // Hysteresis, so hovering on the boundary can't flap React state — and
+    // it only sleeps once the bloom has actually faded out.
+    const asleep = groupOpacity < 0.004 && glowOpacity < 0.085 && (!bloom || bloom.intensity < 0.02);
+    const awake = groupOpacity > 0.02 || glowOpacity > 0.1;
+    if (!dormant && asleep) setDormant(true);
+    else if (dormant && awake) setDormant(false);
   });
 
   const bloom = (

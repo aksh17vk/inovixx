@@ -6,7 +6,7 @@ import { Arrow } from "@/components/ui/MagneticButton";
 
 export function Solutions() {
   return (
-    <section id="solutions" className="relative bg-bg-soft px-6 py-28 md:px-10 md:py-40">
+    <section id="solutions" className="relative bg-bg-soft/25 px-6 py-28 md:px-10 md:py-40">
       <div className="mx-auto max-w-7xl">
         <div className="max-w-2xl">
           <Reveal>

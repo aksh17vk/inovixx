@@ -40,6 +40,8 @@ const VERTEX = /* glsl */ `
   uniform float uDrift;
   uniform float uEnergy;
   uniform float uPulse;
+  uniform float uSparkleCut; // aSeed.x above this sparkles
+  uniform float uSparkle;    // 0..1 overall sparkle strength
   uniform vec2 uPointer;
   uniform float uPointerStrength;
   uniform vec3 uColorA;
@@ -48,6 +50,9 @@ const VERTEX = /* glsl */ `
 
   varying vec3 vColor;
   varying float vAlpha;
+  varying float vSparkle;
+  varying float vSpan;
+  varying float vCorePx;
 
   const float PI = 3.14159265;
 
@@ -70,6 +75,9 @@ const VERTEX = /* glsl */ `
       gl_PointSize = 0.0;
       vColor = vec3(0.0);
       vAlpha = 0.0;
+      vSparkle = 0.0;
+      vSpan = 1.0;
+      vCorePx = 1.0;
       return;
     }
 
@@ -142,9 +150,17 @@ const VERTEX = /* glsl */ `
     alpha *= (0.8 + 0.4 * uEnergy) * (1.0 + shock * 2.0);
     px *= 1.0 + shock * 0.8;
 
+    // The model's stars: the hottest few particles sparkle.
+    vSparkle = smoothstep(uSparkleCut, uSparkleCut + 0.006, aSeed.x) * uSparkle;
+    // A sparkle's sprite needs room for its spikes; the fragment shader
+    // measures in core units, so the core itself stays the same size.
+    vSpan = 1.0 + vSparkle * 3.5;
+
     #ifdef USE_DOF
       // Out-of-focus points grow into soft bokeh discs and spread their light.
+      // Sparkles stay crisp: a blurred star isn't a star.
       float grow = min(1.0 + abs(depth - uFocus) * 0.2, 2.5);
+      grow = mix(grow, 1.0, clamp(vSparkle * 4.0, 0.0, 1.0));
       px *= grow;
       alpha /= grow * grow;
     #endif
@@ -152,7 +168,15 @@ const VERTEX = /* glsl */ `
     // Below one pixel a point can't shrink any further — fade it instead, so
     // distant particles don't turn into a field of hard single-pixel dots.
     alpha *= clamp(px * px, 0.35, 1.0);
-    gl_PointSize = clamp(px, 1.0, 28.0 * uPixelRatio);
+    // Clamp the core first, then fit the sprite around it, so the fragment
+    // shader's core units always match the sprite actually drawn: a sparkle
+    // close to the camera loses spike length, never core size. For ordinary
+    // particles vSpan stays exactly 1, so they are unchanged.
+    float corePx = clamp(px, 1.0, 28.0 * uPixelRatio);
+    float spritePx = min(corePx * vSpan, (28.0 + 20.0 * vSparkle) * uPixelRatio);
+    vSpan = spritePx / corePx;
+    vCorePx = corePx;
+    gl_PointSize = spritePx;
 
     // Violet at the heart, cyan at the rim, a few pink embers.
     float r = length(p);
@@ -172,11 +196,30 @@ const VERTEX = /* glsl */ `
 const FRAGMENT = /* glsl */ `
   varying vec3 vColor;
   varying float vAlpha;
+  varying float vSparkle;
+  varying float vSpan;
+  varying float vCorePx;
 
   void main() {
-    float d = length(gl_PointCoord - 0.5);
-    float a = smoothstep(0.5, 0.0, d);
+    // Measured in core units: identical to a plain soft dot when vSpan is 1.
+    vec2 uv = gl_PointCoord - 0.5;
+    float r = length(uv) * vSpan;
+    float a = smoothstep(0.5, 0.0, r);
     a *= a;
+    // Varyings are constant across a point sprite, so this branch never diverges.
+    if (vSparkle > 0.001) {
+      vec2 q = abs(uv) * vSpan;
+      // Four diffraction spikes, tapering to nothing before the sprite edge so
+      // they are never cut off square. Every factor is non-negative: no pow().
+      float reach = vSpan * 0.46;
+      // Spike width is set in pixels, not core units: never thinner than
+      // ~0.7 px either side of its axis. Sub-pixel spikes blink on and off as
+      // the sparkle drifts across pixel rows. (vCorePx >= 1, so this is safe.)
+      float w = max(vCorePx / 24.0, 0.7) / vCorePx;
+      float spikes = exp(-q.y / w) * clamp(1.0 - q.x / reach, 0.0, 1.0)
+                   + exp(-q.x / w) * clamp(1.0 - q.y / reach, 0.0, 1.0);
+      a += (exp(-r * r * 2.4) * 0.4 + spikes * 0.7) * vSparkle;
+    }
     gl_FragColor = vec4(vColor, a * vAlpha);
     #include <colorspace_fragment>
   }
@@ -245,6 +288,8 @@ export function ParticleField({
           uDrift: { value: 1 },
           uEnergy: { value: 0.5 },
           uPulse: { value: 99 },
+          uSparkleCut: { value: 0.985 },
+          uSparkle: { value: 1 },
           uPointer: { value: new THREE.Vector2(0, 0) },
           uPointerStrength: { value: 0 },
           uColorA: { value: new THREE.Color(COLORS.violetSoft) },
@@ -266,7 +311,7 @@ export function ParticleField({
   useFrame(({ gl, camera }, delta) => {
     const points = pointsRef.current;
     if (!points) return;
-    const { fromKey, toKey, t, groupOpacity, dim, velocity, time, energy, pulseAge } = frame;
+    const { fromKey, toKey, t, groupOpacity, dim, velocity, time, energy, pulseAge, playness } = frame;
     const u = material.uniforms;
 
     // Swap formation buffers only when the morph's endpoints change (a scene
@@ -298,6 +343,11 @@ export function ParticleField({
     u.uDrift.value = reducedMotion ? 0 : 1;
     u.uEnergy.value = energy;
     u.uPulse.value = pulseAge;
+    // Sparkles: ~1.5% of particles in the hero and finale, ~3.5% in the
+    // Playground (brighter still with its Energy), and faint behind content
+    // so they never compete with text.
+    u.uSparkleCut.value = THREE.MathUtils.lerp(0.985, 0.965, playness);
+    u.uSparkle.value = dim * dim * THREE.MathUtils.lerp(1, 0.75 + energy * 0.5, playness);
     u.uFocus.value = camera.position.length();
 
     // Keep total light roughly constant across particle counts.
