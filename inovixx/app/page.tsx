@@ -19,7 +19,7 @@ export default function Home() {
       <IntelligenceCore />
       <ScrollProgress />
       <Navbar />
-      <main id="main-content" className="relative z-10">
+      <main id="main-content" tabIndex={-1} className="relative z-10">
         <Hero />
         <Capabilities />
         <Products />

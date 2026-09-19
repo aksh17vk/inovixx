@@ -130,6 +130,7 @@ export function Playground() {
         {/* Stage — transparent; the scene is the fixed canvas behind the page. */}
         <div
           data-orbit-stage
+          data-cursor-text="Drag"
           tabIndex={0}
           role="group"
           aria-label={

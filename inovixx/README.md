@@ -41,10 +41,11 @@ components/
   solutions/              Section 08
   about/                  Section 09
   final-cta/              Section 10
-  footer/                 Site footer with clipped giant wordmark
+  footer/                 Site footer; Wordmark — the closing INOVIXX, mask-revealed and lit
   intelligence-core/      the persistent 3D scene, quality ladder and scroll choreography
   ui/                     MagneticButton, Reveal, ScrollWords, SpotlightCard,
-                          Marquee, ScrollProgress, SectionEyebrow
+                          Marquee, ScrollProgress, SectionEyebrow,
+                          Cursor (mouse-follower, themed), HomeLink (the INOVIXX mark → hero)
 hooks/                    useLenis, useReducedMotion, useDeviceTier, useInView
 lib/                      constants.ts (copy + design tokens), scroll-store.ts,
                           play-store.ts (the visitor's rotation + playground controls)
@@ -86,8 +87,8 @@ falls back to a static SVG when WebGL2 is missing.
 
 | File | What it draws |
 | --- | --- |
-| `ParticleField.tsx` | 9k–42k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro and a cursor wake. Moving particles brighten in their own hue instead of washing out, so the model keeps its colour while you scroll. The hottest ~2% are drawn as **sparkles** — round stars with a hot centre and a soft circular glow — ~3.8% and brighter in the Playground. The model's stars are where the shine lives. |
-| `GlassCore.tsx` | The glass orb (drei `MeshTransmissionMaterial`, real screen-space refraction), a faceted plasma nucleus, a fresnel rim and a halo. |
+| `ParticleField.tsx` | 9k–42k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro and a cursor wake. Moving particles brighten in their own hue instead of washing out, so the model keeps its colour while you scroll. The hottest ~2% are drawn as **sparkles** — round stars with a hot centre and a soft circular glow — ~3.8% and brighter in the Playground. The model's stars are where the shine lives. In the hero and the Playground (`CORE_CALM` in `scene-mix.ts`) the particles that land on the orb *on screen* give back most of their light, so the glass and its nucleus read instead of a white blowout; everything beyond ~2.4 orb radii keeps full brightness. |
+| `GlassCore.tsx` | The glass orb (drei `MeshTransmissionMaterial`, real screen-space refraction), a faceted plasma nucleus, a fresnel rim and a halo — all eased down by `CORE_CALM` in the hero and Playground. |
 | `Orbitals.tsx` | Four comets on hairline instrument rings. Orbits are re-parented per scene — tight and fast in the finale, under the node rings in Labs, wider and slower behind content. |
 | `Scene.tsx` | The node skeleton, pulse-carrying links, camera, and the glue. |
 | `StudioEnvironment.tsx` | Procedural strip-light studio for the glass. Baked once; nothing is downloaded. |
@@ -122,10 +123,14 @@ park there for a screen of scrolling instead of passing through.
 
 **Quality ladder** (`quality.ts`)
 
-`useDeviceTier` only decides where a device *starts*: desktop on `high`, tablet
-and mobile on `medium`. A drei `PerformanceMonitor` then demotes one rung at a
-time (`high → medium → low → minimal`) when the frame rate stays under the
-floor. It never promotes, so quality can't oscillate.
+Every visit renders the `medium` rung, pinned (`DEFAULT_QUALITY`) — exactly what
+`?quality=medium` does. Append `?quality=high|low|minimal` to pin another rung,
+or `?quality=auto` for the adaptive ladder described below.
+
+With `?quality=auto`, `useDeviceTier` decides where a device *starts*: desktop
+on `high`, tablet and mobile on `medium`. A drei `PerformanceMonitor` then
+demotes one rung at a time (`high → medium → low → minimal`) when the frame
+rate stays under the floor. It never promotes, so quality can't oscillate.
 
 - The floor is `min(40, displayFps × 0.7)`, where `displayFps` is sampled from
   idle `requestAnimationFrame` callbacks *before* the canvas mounts. A display
@@ -139,8 +144,8 @@ floor. It never promotes, so quality can't oscillate.
 - No rung uses MSAA — `antialias` is a context-creation option, and changing it
   would mean tearing down the WebGL context mid-session.
 
-Append `?quality=high|medium|low|minimal` to pin a rung and disable the monitor
-— useful for comparing rungs, or for seeing `high` on a machine that can't hold it.
+Pinned rungs (every one except `auto`) skip the monitor — useful for comparing
+rungs, or for seeing `high` on a machine that can't hold it.
 
 **Responsive framing.** The scene is composed for ~16:10. Narrower viewports
 pull the camera back by aspect ratio; on phones the core is also lifted above
@@ -149,6 +154,36 @@ the stacked hero words, then settles back to centre for the closing statement.
 **Reduced motion.** `prefers-reduced-motion` pins *movement* — formation,
 camera, spin, orbit phase, intro — to the resting scene, but brightness still
 follows the scroll exactly as it does for everyone else.
+
+### Page chrome
+
+- **Always opens at the hero.** The browser restores scroll according to the
+  mode stored on the history entry, so `hooks/useLenis.ts` keeps it `auto`
+  while the page is open (Back/Forward to a `#section` or from `/privacy`
+  still land where you were) and sets it to `manual` on `pagehide`, so the
+  reload that follows starts at the top. An inline script in
+  `app/layout.tsx` also sets `manual` early and, on a *reload*, drops any
+  `#section` the nav left in the URL (the query, e.g. `?quality=`, is kept).
+  A fresh visit to a `/#section` link still lands on that section.
+- **The INOVIXX mark → hero** (`ui/HomeLink.tsx`, in the nav and the footer).
+  On the home page it is a Lenis smooth scroll to the top (`scrollToTop()` in
+  `hooks/useLenis.ts`) that keeps the query and clears any `#section`; on other
+  routes it is a normal link home. The nav watches `#hero` too, so no link
+  stays highlighted once you are back at the top.
+- **Cursor** (`ui/Cursor.tsx`): Cuberto's [mouse-follower](https://github.com/Cuberto/mouse-follower)
+  on the site's GSAP, themed under `.mf-cursor` in `globals.css` — a white-hot
+  orb with a violet halo that opens into a cyan-edged ring over links and
+  buttons (`-pointer`), becomes a DRAG lens over the Playground stage
+  (`data-cursor-text` on the stage) and tightens on press. Mouse and trackpad
+  only (`(hover: hover) and (pointer: fine)`); touch, pens, the scrollbar and
+  text fields (`-caret`) keep the native cursor, which is hidden only once the
+  orb is following a real mouse. Reduced motion: no lag, no stretch.
+- **Footer wordmark** (`footer/Wordmark.tsx`, styles under `.wordmark`): the
+  whole word, wiped in from below by a soft mask (`--wipe`, a registered
+  `@property` so it can transition), filled with a drifting aurora of the
+  brand colours, and lit by a beam — a brighter copy masked to a circle at the
+  mouse, or a band that sweeps across on its own. Its animations are paused
+  while it is off screen; reduced motion shows it still.
 
 **Rules worth keeping**
 
