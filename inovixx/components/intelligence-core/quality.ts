@@ -30,7 +30,7 @@ type Rung = Omit<SceneSettings, "dpr" | "compact"> & { maxDpr: number };
 // anti-aliases in post and the rest lean on DPR, rim glow and additive sprites.
 const LADDER: Record<QualityLevel, Rung> = {
   high: {
-    particles: 30000,
+    particles: 42000,
     dof: true,
     refraction: { samples: 6, resolution: 384 },
     effects: "full",
@@ -38,7 +38,7 @@ const LADDER: Record<QualityLevel, Rung> = {
     maxDpr: 1.5,
   },
   medium: {
-    particles: 18000,
+    particles: 26000,
     dof: true,
     refraction: { samples: 4, resolution: 256 },
     effects: "bloom",
@@ -46,7 +46,7 @@ const LADDER: Record<QualityLevel, Rung> = {
     maxDpr: 1.25,
   },
   low: {
-    particles: 10000,
+    particles: 15000,
     dof: false,
     refraction: false,
     effects: "bloom",
@@ -54,7 +54,7 @@ const LADDER: Record<QualityLevel, Rung> = {
     maxDpr: 1,
   },
   minimal: {
-    particles: 6000,
+    particles: 9000,
     dof: false,
     refraction: false,
     effects: false,

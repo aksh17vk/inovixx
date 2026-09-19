@@ -8,7 +8,7 @@ export function Solutions() {
   return (
     <section id="solutions" className="relative bg-bg-soft/25 px-6 py-28 md:px-10 md:py-40">
       <div className="mx-auto max-w-7xl">
-        <div className="max-w-2xl">
+        <div className="scrim max-w-2xl">
           <Reveal>
             <SectionEyebrow index="08" label="SOLUTIONS" />
           </Reveal>

@@ -22,7 +22,7 @@ export function FinalCTA() {
           </h2>
         </Reveal>
         <Reveal delay={220}>
-          <p className="mx-auto mt-8 max-w-md text-fg-muted md:text-lg">
+          <p className="scrim mx-auto mt-8 max-w-md text-fg-muted md:text-lg">
             Have an idea, a difficult problem, or a technology worth exploring? Let&rsquo;s talk.
           </p>
         </Reveal>

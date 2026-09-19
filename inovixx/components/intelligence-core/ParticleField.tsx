@@ -13,7 +13,9 @@ import { COLORS } from "@/lib/constants";
 
 // Light budget is tuned at this count; other counts rescale size and alpha so
 // every quality rung puts roughly the same amount of light on screen.
-const REFERENCE_COUNT = 30000;
+// Set to the top rung's count, so its particles keep the size and
+// brightness they were tuned at and the extra ones simply add density.
+const REFERENCE_COUNT = 42000;
 const INTRO_SECONDS = 2.4;
 
 // The ignition intro plays once per page load. Module scope, not a ref: a
@@ -182,7 +184,11 @@ const VERTEX = /* glsl */ `
     float r = length(p);
     vec3 c = mix(uColorA, uColorB, smoothstep(0.8, 3.4, r));
     c = mix(c, uColorC, step(0.93, aSeed.z));
-    c = mix(c, vec3(0.75, 1.0, 1.0), clamp(speed * 0.6 + shock, 0.0, 1.0));
+    // Moving particles brighten in their own hue rather than washing out to
+    // pale cyan — the model keeps its colour while you scroll. Only the
+    // Playground's pulse flashes white.
+    c = mix(c, vec3(0.75, 1.0, 1.0), clamp(shock, 0.0, 1.0));
+    c *= 1.0 + speed * 0.45;
     // A few of the largest points whiten slightly and run past 1.0 so they
     // clear the bloom threshold; saturated brand colours alone never would.
     // Kept rare and only lightly whitened — otherwise, at small point sizes,
@@ -346,8 +352,8 @@ export function ParticleField({
     // Sparkles: ~1.5% of particles in the hero and finale, ~3.5% in the
     // Playground (brighter still with its Energy), and faint behind content
     // so they never compete with text.
-    u.uSparkleCut.value = THREE.MathUtils.lerp(0.985, 0.965, playness);
-    u.uSparkle.value = dim * dim * THREE.MathUtils.lerp(1, 0.75 + energy * 0.5, playness);
+    u.uSparkleCut.value = THREE.MathUtils.lerp(0.98, 0.962, playness);
+    u.uSparkle.value = dim * THREE.MathUtils.lerp(1, 0.75 + energy * 0.5, playness);
     u.uFocus.value = camera.position.length();
 
     // Keep total light roughly constant across particle counts.
@@ -356,11 +362,11 @@ export function ParticleField({
 
     // Full presence in the hero and finale; a thin, soft haze behind content —
     // thinner still on phones, where body text spans the whole backdrop.
-    const content = compact ? 0.5 : 1;
-    const presence = THREE.MathUtils.lerp(content, compact ? 0.85 : 1, dim * dim);
-    const opacity = groupOpacity * (0.07 + 0.83 * dim * dim) * presence * Math.min(scale, 1.6);
+    const content = compact ? 0.7 : 1;
+    const presence = THREE.MathUtils.lerp(content, 1, dim);
+    const opacity = groupOpacity * (0.3 + 0.6 * dim) * presence * Math.min(scale, 1.6);
     u.uOpacity.value = opacity;
-    u.uDensity.value = THREE.MathUtils.lerp(0.45, 1, dim);
+    u.uDensity.value = THREE.MathUtils.lerp(0.7, 1, dim);
     points.visible = opacity > 0.004;
 
     // NDC pointer (y up), eased so the wake trails the cursor.
