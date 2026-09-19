@@ -86,7 +86,7 @@ falls back to a static SVG when WebGL2 is missing.
 
 | File | What it draws |
 | --- | --- |
-| `ParticleField.tsx` | 9k–42k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro and a cursor wake. Moving particles brighten in their own hue instead of washing out, so the model keeps its colour while you scroll. The hottest ~2% are drawn as **sparkles** (core, halo, four diffraction spikes) — ~3.8% and brighter in the Playground. The model's stars are where the shine lives. |
+| `ParticleField.tsx` | 9k–42k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro and a cursor wake. Moving particles brighten in their own hue instead of washing out, so the model keeps its colour while you scroll. The hottest ~2% are drawn as **sparkles** — round stars with a hot centre and a soft circular glow — ~3.8% and brighter in the Playground. The model's stars are where the shine lives. |
 | `GlassCore.tsx` | The glass orb (drei `MeshTransmissionMaterial`, real screen-space refraction), a faceted plasma nucleus, a fresnel rim and a halo. |
 | `Orbitals.tsx` | Four comets on hairline instrument rings. Orbits are re-parented per scene — tight and fast in the finale, under the node rings in Labs, wider and slower behind content. |
 | `Scene.tsx` | The node skeleton, pulse-carrying links, camera, and the glue. |
