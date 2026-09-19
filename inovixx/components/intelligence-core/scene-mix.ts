@@ -22,6 +22,12 @@ const CONTENT_DIM = [1, 0.85, 0.85, 0.85, 0.85, 1, 0.85, 0.85, 0.85, 1];
 // Scale of the glass orb: a little smaller behind content, so it doesn't sit
 // under a heading at full size.
 const ORB_SCALE = [1, 0.62, 0.56, 0.56, 0.62, 1, 0.62, 0.6, 0.6, 1.12];
+// How much the heart of the core is calmed. The hero and the Playground look
+// straight into it at full size, where the densest particle shells, the
+// nucleus and the halo otherwise add up to a white blowout that hides the
+// glass. Only the centre calms — the outer shell, the disc and every star
+// around it keep their full light.
+const CORE_CALM = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0];
 
 export const CAMERA_POS: [number, number, number][] = [
   [0, 0, 6.3],
@@ -78,6 +84,8 @@ export const frame = {
   glowOpacity: GLOW_BASE[0],
   dim: 1,
   orbScale: 1,
+  /** 0..1 how much the heart of the core is calmed (see CORE_CALM). */
+  coreCalm: 1,
   /** 0..1 progress into the closing scene. */
   finale: 0,
   /** 0..1 how much of the playground scene is in effect. */
@@ -112,6 +120,7 @@ export function updateFrame(reducedMotion: boolean, delta: number) {
   frame.glowOpacity = lerp(GLOW_BASE[fade.idx], GLOW_BASE[fade.next], fade.t);
   frame.dim = lerp(CONTENT_DIM[fade.idx], CONTENT_DIM[fade.next], fade.t);
   frame.orbScale = lerp(ORB_SCALE[fade.idx], ORB_SCALE[fade.next], fade.t);
+  frame.coreCalm = lerp(CORE_CALM[fade.idx], CORE_CALM[fade.next], fade.t);
   frame.finale = fade.idx === LAST_SCENE - 1 ? fade.t : 0;
   frame.playness =
     fade.idx === PLAYGROUND_SCENE ? 1 - fade.t : fade.next === PLAYGROUND_SCENE ? fade.t : 0;

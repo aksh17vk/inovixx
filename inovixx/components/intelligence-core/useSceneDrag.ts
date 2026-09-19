@@ -69,7 +69,9 @@ export function useSceneDrag(enabled: boolean) {
     ring.setAttribute("aria-hidden", "true");
     document.body.appendChild(ring);
     const placeRing = (x: number, y: number) => {
-      ring.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      // `translate`, not `transform`: the ring animates `scale`, which would
+      // otherwise multiply this offset and throw it off the pointer.
+      ring.style.translate = `${x}px ${y}px`;
     };
 
     const engage = () => {

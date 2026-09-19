@@ -1,9 +1,10 @@
 import type { DeviceTier } from "@/hooks/useDeviceTier";
 
 // What the 3D scene is allowed to spend. Every WebGL2 device renders the same
-// scene; `useDeviceTier` only picks where on this ladder it starts. A
-// PerformanceMonitor then steps down if the machine can't hold its frame
-// rate. It never steps back up, so quality can't oscillate.
+// scene, pinned to DEFAULT_QUALITY unless `?quality=` asks for another rung.
+// With `?quality=auto` the adaptive ladder takes over instead: `useDeviceTier`
+// picks where on it to start and a PerformanceMonitor steps down if the
+// machine can't hold its frame rate (never back up, so it can't oscillate).
 export type QualityLevel = "high" | "medium" | "low" | "minimal";
 
 export type SceneSettings = {
@@ -83,12 +84,19 @@ export function stepDown(level: QualityLevel): QualityLevel {
   return QUALITY_ORDER[Math.min(QUALITY_ORDER.length - 1, QUALITY_ORDER.indexOf(level) + 1)];
 }
 
-// `?quality=high|medium|low|minimal` pins a level and turns the monitor off —
-// handy for comparing rungs, or for looking at "high" on a machine that can't hold it.
+// Every visit renders this rung, pinned (monitor off) — exactly what
+// `?quality=medium` does. It is the look the site is tuned for, and it holds
+// its frame rate on integrated GPUs and phones.
+export const DEFAULT_QUALITY: QualityLevel = "medium";
+
+// `?quality=high|medium|low|minimal` pins another rung — handy for comparing
+// them, or for looking at "high" on a machine that can't hold it.
+// `?quality=auto` returns null: the adaptive ladder and its monitor.
 export function forcedQuality(): QualityLevel | null {
   if (typeof window === "undefined") return null;
   const value = new URLSearchParams(window.location.search).get("quality");
-  return QUALITY_ORDER.includes(value as QualityLevel) ? (value as QualityLevel) : null;
+  if (value === "auto") return null;
+  return QUALITY_ORDER.includes(value as QualityLevel) ? (value as QualityLevel) : DEFAULT_QUALITY;
 }
 
 // --- Remembering where a device settled -------------------------------------

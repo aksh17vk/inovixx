@@ -8,6 +8,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { SPINNING_SCENES, particleFormation, prewarmParticleFormations } from "./formations";
 import { frame } from "./scene-mix";
+import { ORB_RADIUS } from "./GlassCore";
 import { scrollState, type FormationKey } from "@/lib/scroll-store";
 import { COLORS } from "@/lib/constants";
 
@@ -44,6 +45,8 @@ const VERTEX = /* glsl */ `
   uniform float uPulse;
   uniform float uSparkleCut; // aSeed.x above this sparkles
   uniform float uSparkle;    // 0..1 overall sparkle strength
+  uniform float uCoreCalm;   // 0..1, calms what sits over the orb (hero, Playground)
+  uniform float uOrbRadius;  // the glass orb's radius, world units
   uniform vec2 uPointer;
   uniform float uPointerStrength;
   uniform vec3 uColorA;
@@ -148,6 +151,17 @@ const VERTEX = /* glsl */ `
 
     float alpha = uOpacity * (0.3 + 0.7 * aSeed.x) * twinkle * depthFade * keep * ie;
     alpha *= (0.8 + 0.4 * uEnergy) * (1.0 + shock * 2.0);
+    // A calmer heart. Everything that lands on the orb on screen (the shells
+    // hugging it, and whatever of the disc or outer shell passes in front or
+    // behind at this angle) stacks up into solid white under additive
+    // blending and hides the glass. So in the hero and Playground those
+    // particles give back most of their light. Measured on screen, in world
+    // units at the core's depth, so it holds at any tilt or zoom; from ~2.4
+    // orb radii out nothing changes and the stars around the core stay bright.
+    vec4 cv = modelViewMatrix[3]; // the core (this group's origin) in view space
+    vec2 fromCore = (mv.xy / max(-mv.z, 1e-3) - cv.xy / max(-cv.z, 1e-3)) * -cv.z;
+    float heart = (1.0 - smoothstep(uOrbRadius * 1.25, uOrbRadius * 2.4, length(fromCore))) * uCoreCalm;
+    alpha *= 1.0 - heart * 0.68;
     px *= 1.0 + shock * 0.8;
 
     // The model's stars: the hottest few particles sparkle.
@@ -192,6 +206,8 @@ const VERTEX = /* glsl */ `
     // they are all that survives and the whole field reads as grey.
     float hot = step(0.93, aSeed.x);
     vColor = mix(c * 1.35, mix(c, vec3(1.0), 0.22) * 2.4, hot);
+    // ...and in the calmed heart they stay in colour rather than blooming white.
+    vColor *= 1.0 - heart * hot * 0.45;
     vAlpha = alpha;
   }
 `;
@@ -289,6 +305,8 @@ export function ParticleField({
           uPulse: { value: 99 },
           uSparkleCut: { value: 0.985 },
           uSparkle: { value: 1 },
+          uCoreCalm: { value: 1 },
+          uOrbRadius: { value: 0.62 },
           uPointer: { value: new THREE.Vector2(0, 0) },
           uPointerStrength: { value: 0 },
           uColorA: { value: new THREE.Color(COLORS.violetSoft) },
@@ -310,7 +328,7 @@ export function ParticleField({
   useFrame(({ gl, camera }, delta) => {
     const points = pointsRef.current;
     if (!points) return;
-    const { fromKey, toKey, t, groupOpacity, dim, velocity, time, energy, pulseAge, playness } = frame;
+    const { fromKey, toKey, t, groupOpacity, dim, velocity, time, energy, pulseAge, playness, coreCalm, orbScale } = frame;
     const u = material.uniforms;
 
     // Swap formation buffers only when the morph's endpoints change (a scene
@@ -348,6 +366,8 @@ export function ParticleField({
     u.uSparkleCut.value = THREE.MathUtils.lerp(0.98, 0.962, playness);
     u.uSparkle.value = dim * THREE.MathUtils.lerp(1, 0.75 + energy * 0.5, playness);
     u.uFocus.value = camera.position.length();
+    u.uCoreCalm.value = coreCalm;
+    u.uOrbRadius.value = ORB_RADIUS * orbScale;
 
     // Keep total light roughly constant across particle counts.
     const scale = Math.sqrt(REFERENCE_COUNT / count);

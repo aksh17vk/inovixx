@@ -6,6 +6,12 @@ import { AppShell } from "@/components/ui/AppShell";
 import { SITE } from "@/lib/constants";
 import "./globals.css";
 
+// Every load starts at the hero. The scroll story is composed from the top, so
+// the browser must not restore a mid-page position, and a reload also drops a
+// #section the nav left in the URL (keeping the query, e.g. ?quality=). A
+// fresh visit to a #section link still lands on that section. Inline in
+// <head> so it runs before the browser's own restore.
+const START_AT_HERO = `try{history.scrollRestoration="manual";var n=performance.getEntriesByType("navigation")[0];if(n&&n.type==="reload"&&location.hash)history.replaceState(history.state,"",location.pathname+location.search)}catch(e){}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -48,6 +54,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${GeistSans.variable} ${GeistMono.variable} h-full`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: START_AT_HERO }} />
+      </head>
       <body className="min-h-full bg-bg text-fg antialiased">
         <a
           href="#main-content"

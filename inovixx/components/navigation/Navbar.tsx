@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { NAV_LINKS, SITE } from "@/lib/constants";
 import { MagneticButton } from "@/components/ui/MagneticButton";
+import { HomeLink } from "@/components/ui/HomeLink";
 
 // Nav hrefs are "/#section" so they also work from /privacy and /terms.
 const sectionId = (href: string) => href.split("#")[1] ?? "";
@@ -35,9 +36,10 @@ export function Navbar() {
   }, []);
 
   // Active-link tracking: whichever nav target is closest to the top third
-  // of the viewport wins.
+  // of the viewport wins. The hero is watched too, so going back up (the
+  // logo) clears the highlight rather than leaving the last section lit.
   useEffect(() => {
-    const targets = NAV_LINKS.map((l) => document.getElementById(sectionId(l.href))).filter(
+    const targets = ["hero", ...NAV_LINKS.map((l) => sectionId(l.href))].map((id) => document.getElementById(id)).filter(
       (el): el is HTMLElement => !!el
     );
     if (targets.length === 0) return;
@@ -92,15 +94,15 @@ export function Navbar() {
             : "mt-0 w-full max-w-7xl border border-transparent bg-transparent px-6 py-5 md:px-10 md:py-7"
         }`}
       >
-        <Link
-          href="/#hero"
+        <HomeLink
+          onClick={() => setOpen(false)}
           className={`flex items-center gap-2.5 font-display font-semibold tracking-[0.22em] text-fg transition-all ${
             scrolled ? "pl-2 text-[13px]" : "text-sm"
           }`}
         >
           <span className="relative block h-2 w-2 rounded-full bg-violet-soft text-violet-soft ping-soft" />
           {SITE.name}
-        </Link>
+        </HomeLink>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
           {NAV_LINKS.map((link) => {
