@@ -82,13 +82,13 @@ falls back to a static SVG when WebGL2 is missing.
 
 | File | What it draws |
 | --- | --- |
-| `ParticleField.tsx` | 6k–30k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro, density thinning behind content and a cursor wake. |
+| `ParticleField.tsx` | 6k–30k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro, density thinning behind content and a cursor wake. The hottest ~1.5% are drawn as **sparkles** (core, halo, four diffraction spikes) — ~3.5% and brighter in the Playground, faint behind content. The model's stars are where the shine lives. |
 | `GlassCore.tsx` | The glass orb (drei `MeshTransmissionMaterial`, real screen-space refraction), a faceted plasma nucleus, a fresnel rim and a halo. |
 | `Orbitals.tsx` | Four comets on hairline instrument rings. Orbits are re-parented per scene — tight and fast in the finale, under the node rings in Labs, wide and faint behind content. |
 | `Scene.tsx` | The node skeleton, pulse-carrying links, camera, and the glue. |
 | `StudioEnvironment.tsx` | Procedural strip-light studio for the glass. Baked once; nothing is downloaded. |
 | `Effects.tsx` | Selective HDR bloom (+ SMAA on the top rung). |
-| `Starfield.tsx` | Distant backdrop points. |
+| `Starfield.tsx` | The background sky: ~4k calm, twinkling points on a shell around the **camera** (a skybox, so it reads the same at every zoom and on phones, whose camera pulls back). Deliberately muted and under the bloom threshold — it must never out-shine the model — but never below 75% brightness, so it is always there while scrolling. |
 
 **Hands on** (`useSceneDrag.ts`, `lib/play-store.ts`, `components/playground/`)
 
@@ -162,6 +162,9 @@ for everyone else.
   `pow(clamp(1.0 - ndv, 0.0, 1.0), k)`, because `normalize()` can overshoot 1.0.
   A NaN position drops the point; a NaN colour gets smeared across the whole
   frame by mipmap bloom. This one has bitten twice.
+- Don't paint opaque backgrounds on sections: the canvas is `fixed` behind the
+  page, so an opaque section hides the whole sky. Use a translucent tint
+  (`bg-bg-soft/25`).
 - Large surfaces over the canvas use `.veil`, not `.glass`: the canvas repaints
   every frame, so a section-sized `backdrop-filter` is re-blurred every frame.
 - `three` is pinned to `~0.185` because `postprocessing` peers on `< 0.187`.
