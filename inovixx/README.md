@@ -73,6 +73,10 @@ falls back to a static SVG when WebGL2 is missing.
   indices, fades, orb scale, scroll velocity, time). `<FrameDriver/>` is mounted
   first in `Scene.tsx` so it runs before every other layer; all layers read
   `frame` rather than recomputing it.
+- The model stays on screen in full colour the whole way down the page. Behind
+  content it only eases off a touch (`CONTENT_DIM` 0.85) and the orb shrinks a
+  little; headings and copy sitting on it get a soft `.scrim` pool (in
+  `globals.css`) instead of the model being dimmed.
 - `formations.ts` procedurally generates, per scene (core / broken / products /
   technology / labs / final), both the 42-node skeleton with its
   nearest-neighbour links **and** a particle formation of any size over the
@@ -82,9 +86,9 @@ falls back to a static SVG when WebGL2 is missing.
 
 | File | What it draws |
 | --- | --- |
-| `ParticleField.tsx` | 6k–30k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro, density thinning behind content and a cursor wake. The hottest ~1.5% are drawn as **sparkles** (core, halo, four diffraction spikes) — ~3.5% and brighter in the Playground, faint behind content. The model's stars are where the shine lives. |
+| `ParticleField.tsx` | 9k–42k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro and a cursor wake. Moving particles brighten in their own hue instead of washing out, so the model keeps its colour while you scroll. The hottest ~2% are drawn as **sparkles** (core, halo, four diffraction spikes) — ~3.8% and brighter in the Playground. The model's stars are where the shine lives. |
 | `GlassCore.tsx` | The glass orb (drei `MeshTransmissionMaterial`, real screen-space refraction), a faceted plasma nucleus, a fresnel rim and a halo. |
-| `Orbitals.tsx` | Four comets on hairline instrument rings. Orbits are re-parented per scene — tight and fast in the finale, under the node rings in Labs, wide and faint behind content. |
+| `Orbitals.tsx` | Four comets on hairline instrument rings. Orbits are re-parented per scene — tight and fast in the finale, under the node rings in Labs, wider and slower behind content. |
 | `Scene.tsx` | The node skeleton, pulse-carrying links, camera, and the glue. |
 | `StudioEnvironment.tsx` | Procedural strip-light studio for the glass. Baked once; nothing is downloaded. |
 | `Effects.tsx` | Selective HDR bloom (+ SMAA on the top rung). |
@@ -143,9 +147,8 @@ pull the camera back by aspect ratio; on phones the core is also lifted above
 the stacked hero words, then settles back to centre for the closing statement.
 
 **Reduced motion.** `prefers-reduced-motion` pins *movement* — formation,
-camera, spin, orbit phase, intro — to the resting scene, but fades still follow
-the scroll, so the core dims and disappears behind content exactly as it does
-for everyone else.
+camera, spin, orbit phase, intro — to the resting scene, but brightness still
+follows the scroll exactly as it does for everyone else.
 
 **Rules worth keeping**
 

@@ -24,12 +24,12 @@ const HERO: OrbitSet = [
   [3.05, 1.0, -0.4, -0.35, 0.24, 0.9],
   [3.35, 0.88, 0.9, 0.1, -0.18, 0.7],
 ];
-// Behind content: wide, slow and barely there.
+// Behind content: wider and slower, but still clearly there.
 const CONTENT: OrbitSet = [
-  [4.2, 1.0, 0.1, 0.0, 0.12, 0.07],
-  [4.8, 0.95, 0.4, 0.15, -0.1, 0.06],
-  [5.4, 1.0, -0.3, -0.2, 0.08, 0.05],
-  [6.0, 0.9, 0.7, 0.1, -0.06, 0.04],
+  [4.2, 1.0, 0.1, 0.0, 0.16, 0.34],
+  [4.8, 0.95, 0.4, 0.15, -0.13, 0.3],
+  [5.4, 1.0, -0.3, -0.2, 0.11, 0.26],
+  [6.0, 0.9, 0.7, 0.1, -0.08, 0.22],
 ];
 // Labs: the rings slide under the node rings built by buildLabs().
 const LABS: OrbitSet = [
@@ -37,12 +37,6 @@ const LABS: OrbitSet = [
   [2.6, 1.0, -0.35, 0.0, -0.22, 0.28],
   [3.5, 1.0, 0.55, 0.0, 0.16, 0.24],
   [4.4, 1.0, 0.0, 0.0, -0.1, 0],
-];
-const DORMANT: OrbitSet = [
-  [5, 1, 0.15, 0, 0.05, 0],
-  [5.5, 1, -0.35, 0, -0.05, 0],
-  [6, 1, 0.55, 0, 0.05, 0],
-  [6.5, 1, 0, 0, -0.05, 0],
 ];
 // Finale: everything collapses into a tight, fast atom around the orb.
 const FINALE: OrbitSet = [
@@ -54,7 +48,7 @@ const FINALE: OrbitSet = [
 
 // One entry per SCENE_ORDER index.
 // The playground is a hero moment, so it gets the hero's orbits back.
-const ORBIT_SPECS: OrbitSet[] = [HERO, CONTENT, CONTENT, CONTENT, LABS, HERO, DORMANT, DORMANT, DORMANT, FINALE];
+const ORBIT_SPECS: OrbitSet[] = [HERO, CONTENT, CONTENT, CONTENT, LABS, HERO, CONTENT, CONTENT, CONTENT, FINALE];
 
 // Shared by the rings and the comets. Uniform arrays are indexed by aIdx.
 const ORBIT_GLSL = /* glsl */ `

@@ -10,7 +10,7 @@ export function Products() {
     <section id="products" className="relative px-6 py-28 md:px-10 md:py-40">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-          <div>
+          <div className="scrim">
             <Reveal>
               <SectionEyebrow index="03" label="PRODUCTS" />
             </Reveal>
@@ -21,7 +21,7 @@ export function Products() {
             </Reveal>
           </div>
           <Reveal delay={200}>
-            <p className="max-w-sm text-fg-muted md:text-right">
+            <p className="scrim max-w-sm text-fg-muted md:text-right">
               Intelligent products aimed at meaningful, real-world problems. Two are in motion today.
             </p>
           </Reveal>

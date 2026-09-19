@@ -17,7 +17,7 @@ export function Principles() {
           {PRINCIPLES.map((p, i) => (
             <div
               key={p.key}
-              className="grid gap-6 border-t border-line py-12 last:border-b md:grid-cols-[auto_1fr] md:gap-x-12 md:py-16 lg:grid-cols-[auto_1fr_minmax(0,22rem)]"
+              className="scrim grid gap-6 border-t border-line py-12 last:border-b md:grid-cols-[auto_1fr] md:gap-x-12 md:py-16 lg:grid-cols-[auto_1fr_minmax(0,22rem)]"
             >
               <span className="font-mono-label pt-2 text-xs text-fg-faint">0{i + 1}</span>
               <ScrollWords
