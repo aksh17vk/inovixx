@@ -54,7 +54,6 @@ const VERTEX = /* glsl */ `
   varying float vAlpha;
   varying float vSparkle;
   varying float vSpan;
-  varying float vCorePx;
 
   const float PI = 3.14159265;
 
@@ -79,7 +78,6 @@ const VERTEX = /* glsl */ `
       vAlpha = 0.0;
       vSparkle = 0.0;
       vSpan = 1.0;
-      vCorePx = 1.0;
       return;
     }
 
@@ -154,9 +152,9 @@ const VERTEX = /* glsl */ `
 
     // The model's stars: the hottest few particles sparkle.
     vSparkle = smoothstep(uSparkleCut, uSparkleCut + 0.006, aSeed.x) * uSparkle;
-    // A sparkle's sprite needs room for its spikes; the fragment shader
+    // A sparkle's sprite needs room for its round glow; the fragment shader
     // measures in core units, so the core itself stays the same size.
-    vSpan = 1.0 + vSparkle * 3.5;
+    vSpan = 1.0 + vSparkle * 2.0;
 
     #ifdef USE_DOF
       // Out-of-focus points grow into soft bokeh discs and spread their light.
@@ -172,12 +170,11 @@ const VERTEX = /* glsl */ `
     alpha *= clamp(px * px, 0.35, 1.0);
     // Clamp the core first, then fit the sprite around it, so the fragment
     // shader's core units always match the sprite actually drawn: a sparkle
-    // close to the camera loses spike length, never core size. For ordinary
+    // close to the camera loses some glow, never core size. For ordinary
     // particles vSpan stays exactly 1, so they are unchanged.
     float corePx = clamp(px, 1.0, 28.0 * uPixelRatio);
     float spritePx = min(corePx * vSpan, (28.0 + 20.0 * vSparkle) * uPixelRatio);
     vSpan = spritePx / corePx;
-    vCorePx = corePx;
     gl_PointSize = spritePx;
 
     // Violet at the heart, cyan at the rim, a few pink embers.
@@ -204,27 +201,23 @@ const FRAGMENT = /* glsl */ `
   varying float vAlpha;
   varying float vSparkle;
   varying float vSpan;
-  varying float vCorePx;
 
   void main() {
     // Measured in core units: identical to a plain soft dot when vSpan is 1.
     vec2 uv = gl_PointCoord - 0.5;
     float r = length(uv) * vSpan;
-    float a = smoothstep(0.5, 0.0, r);
+    float a = 1.0 - smoothstep(0.0, 0.5, r);
     a *= a;
     // Varyings are constant across a point sprite, so this branch never diverges.
     if (vSparkle > 0.001) {
-      vec2 q = abs(uv) * vSpan;
-      // Four diffraction spikes, tapering to nothing before the sprite edge so
-      // they are never cut off square. Every factor is non-negative: no pow().
-      float reach = vSpan * 0.46;
-      // Spike width is set in pixels, not core units: never thinner than
-      // ~0.7 px either side of its axis. Sub-pixel spikes blink on and off as
-      // the sparkle drifts across pixel rows. (vCorePx >= 1, so this is safe.)
-      float w = max(vCorePx / 24.0, 0.7) / vCorePx;
-      float spikes = exp(-q.y / w) * clamp(1.0 - q.x / reach, 0.0, 1.0)
-                   + exp(-q.x / w) * clamp(1.0 - q.y / reach, 0.0, 1.0);
-      a += (exp(-r * r * 2.4) * 0.4 + spikes * 0.7) * vSparkle;
+      // Sparkles stay round: a hot pinpoint centre and a soft circular glow,
+      // with no rays. The glow fades out before the sprite's edge
+      // (r = vSpan / 2) so it is never clipped square.
+      float edge = vSpan * 0.5;
+      float fade = 1.0 - smoothstep(edge * 0.55, edge, r);
+      float glow = exp(-r * r * 1.8) * fade;
+      float pin = exp(-r * r * 22.0);
+      a += (glow * 0.55 + pin * 0.5) * vSparkle;
     }
     gl_FragColor = vec4(vColor, a * vAlpha);
     #include <colorspace_fragment>
@@ -349,9 +342,9 @@ export function ParticleField({
     u.uDrift.value = reducedMotion ? 0 : 1;
     u.uEnergy.value = energy;
     u.uPulse.value = pulseAge;
-    // Sparkles: ~1.5% of particles in the hero and finale, ~3.5% in the
-    // Playground (brighter still with its Energy), and faint behind content
-    // so they never compete with text.
+    // Sparkles (round, glowing stars): ~2% of particles, ~3.8% in the
+    // Playground (brighter still with its Energy), and a little softer
+    // behind content.
     u.uSparkleCut.value = THREE.MathUtils.lerp(0.98, 0.962, playness);
     u.uSparkle.value = dim * THREE.MathUtils.lerp(1, 0.75 + energy * 0.5, playness);
     u.uFocus.value = camera.position.length();
