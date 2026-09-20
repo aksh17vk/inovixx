@@ -33,8 +33,13 @@ export function Wordmark() {
       const r = beam.getBoundingClientRect();
       const x = px - r.left;
       const y = py - r.top;
-      const reach = r.height * 0.6;
-      const near = x > -reach && x < r.width + reach && y > -reach && y < r.height + reach;
+      // The box is padded out to give the glow room (see --room), so the
+      // letters start one pad in; measure "near" from them, or the beam
+      // would switch on with the mouse still up among the footer links.
+      const pad = parseFloat(getComputedStyle(beam).paddingTop) || 0;
+      const reach = Math.max(r.height - pad * 2, 0) * 0.6;
+      const near =
+        x > pad - reach && x < r.width - pad + reach && y > pad - reach && y < r.height - pad + reach;
       el.style.setProperty("--mx", `${x.toFixed(1)}px`);
       el.style.setProperty("--my", `${y.toFixed(1)}px`);
       el.dataset.beam = near ? "cursor" : "auto";

@@ -45,7 +45,9 @@ export function Cursor() {
         return;
       }
       // The native cursor is hidden only once the orb is following a real
-      // mouse, so there is never a moment with no cursor at all.
+      // mouse, so there is never a moment with no cursor at all — a press
+      // without a move has not shown the orb yet.
+      if (e.type !== "pointermove") return;
       html.classList.add("has-custom-cursor");
       if (handedBack) {
         handedBack = false;
@@ -57,6 +59,15 @@ export function Cursor() {
     // after a dragged link, a context menu or a lost window.
     const release = () => cursor?.removeState("-active");
 
+    let drawnX = NaN;
+    let drawnY = NaN;
+    const draw = () => {
+      if (!cursor || (cursor.pos.x === drawnX && cursor.pos.y === drawnY)) return;
+      drawnX = cursor.pos.x;
+      drawnY = cursor.pos.y;
+      cursor.render(true);
+    };
+
     const start = () => {
       cursor = new MouseFollower({
         // Snappy enough to point with, soft enough to feel alive. Under
@@ -67,12 +78,21 @@ export function Cursor() {
         skewingText: reducedMotion ? 0 : 1.5,
         stateDetection: { "-pointer": POINTER, "-caret": CARET },
       });
+      // The library skips a frame whenever either velocity component is
+      // exactly 0 (its render() guard). A straight horizontal or vertical
+      // move produces that on every frame — and speed 0 under reduced motion
+      // produces it always — leaving the orb stranded while the pointer
+      // moves on and the native cursor is hidden. So drive the drawing here
+      // instead, skipping only when it really has not moved.
+      gsap.ticker.remove(cursor.ticker);
+      gsap.ticker.add(draw);
       window.addEventListener("pointermove", onPointer, { passive: true });
       window.addEventListener("pointerdown", onPointer, { passive: true });
       for (const type of RELEASE_EVENTS) window.addEventListener(type, release);
     };
 
     const stop = () => {
+      gsap.ticker.remove(draw);
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", onPointer);
       for (const type of RELEASE_EVENTS) window.removeEventListener(type, release);

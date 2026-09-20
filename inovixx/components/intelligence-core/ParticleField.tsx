@@ -17,6 +17,18 @@ import { COLORS } from "@/lib/constants";
 // Set to the top rung's count, so its particles keep the size and
 // brightness they were tuned at and the extra ones simply add density.
 const REFERENCE_COUNT = 42000;
+
+// Which shapes put dense shells over the orb and so need the calm (see
+// CORE_CALM in scene-mix). The Playground's other picks leave the centre
+// clear, and calming them would only dim structure the visitor chose to see.
+const FORMATION_CALM: Record<FormationKey, number> = {
+  core: 1,
+  final: 1,
+  broken: 0,
+  products: 0,
+  technology: 0,
+  labs: 0,
+};
 const INTRO_SECONDS = 2.4;
 
 // The ignition intro plays once per page load. Module scope, not a ref: a
@@ -161,7 +173,11 @@ const VERTEX = /* glsl */ `
     vec4 cv = modelViewMatrix[3]; // the core (this group's origin) in view space
     vec2 fromCore = (mv.xy / max(-mv.z, 1e-3) - cv.xy / max(-cv.z, 1e-3)) * -cv.z;
     float heart = (1.0 - smoothstep(uOrbRadius * 1.25, uOrbRadius * 2.4, length(fromCore))) * uCoreCalm;
-    alpha *= 1.0 - heart * 0.68;
+    // A moderate give-back, evenly across everything over the orb: the
+    // blowout is an accumulation, so taking a little from each contributor
+    // clears it, while no single arc of the disc or the outer shell passing
+    // through darkens enough to read as a notch.
+    alpha *= 1.0 - heart * 0.45;
     px *= 1.0 + shock * 0.8;
 
     // The model's stars: the hottest few particles sparkle.
@@ -366,7 +382,8 @@ export function ParticleField({
     u.uSparkleCut.value = THREE.MathUtils.lerp(0.98, 0.962, playness);
     u.uSparkle.value = dim * THREE.MathUtils.lerp(1, 0.75 + energy * 0.5, playness);
     u.uFocus.value = camera.position.length();
-    u.uCoreCalm.value = coreCalm;
+    u.uCoreCalm.value =
+      coreCalm * THREE.MathUtils.lerp(FORMATION_CALM[fromKey], FORMATION_CALM[toKey], t);
     u.uOrbRadius.value = ORB_RADIUS * orbScale;
 
     // Keep total light roughly constant across particle counts.

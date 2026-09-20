@@ -26,7 +26,14 @@ export function HomeLink({ onClick, ...props }: Props) {
     scrollToTop();
     // Keyboard users go with it: without this, focus stays on the link (the
     // footer one is at the bottom) and the next Tab scrolls straight back.
-    document.getElementById("main-content")?.focus({ preventScroll: true });
+    // The attribute lasts only as long as the focus does — left on, every
+    // click on the page would park focus here and send the next Tab to the
+    // top (the skip-link pattern).
+    const main = document.getElementById("main-content");
+    if (!main) return;
+    main.setAttribute("tabindex", "-1");
+    main.addEventListener("blur", () => main.removeAttribute("tabindex"), { once: true });
+    main.focus({ preventScroll: true });
   };
 
   return <Link {...props} href="/" onClick={handleClick} />;

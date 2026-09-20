@@ -453,6 +453,13 @@ html.is-orbiting .mf-cursor::before {
   transform: scale(0.2);
 }
 
+/* Hidden means hidden: the state rules above outrank the library's own
+   `-hidden` transform, and nothing there covers the ::after dot or the
+   label. Fading the whole element takes all three with it. */
+html .mf-cursor.-hidden {
+  opacity: 0;
+}
+
 /* ------------------------------------------------------------------ */
 /* Footer wordmark (components/footer/Wordmark.tsx)                    */
 /* ------------------------------------------------------------------ */
@@ -467,9 +474,15 @@ html.is-orbiting .mf-cursor::before {
 
 .wordmark {
   --wipe: 0%;
+  /* Room for the beam's glow: a mask clips to its element's box, and both
+     this element and the lit copy inside it are masked. Pulled back in
+     below, so the layout is what it would be without it. */
+  --room: max(0.3em, 48px);
   position: relative;
   display: grid;
   place-items: center;
+  padding: var(--room);
+  margin: calc(-1 * var(--room));
   font-size: clamp(4rem, 18.5vw, 16.5rem);
   line-height: 0.9;
   letter-spacing: -0.05em;
@@ -486,16 +499,15 @@ html.is-orbiting .mf-cursor::before {
   --wipe: 125%;
 }
 
-/* Both copies share one grid cell, so the beam sits exactly on the fill.
-   A mask clips to its element's box, so the box is padded out (and pulled
-   back in with negative margins, leaving the layout as it was) to give the
-   beam's glow room on every screen size. */
+/* Both copies share one grid cell, so the beam sits exactly on the fill,
+   each padded out by the same --room as the parent (and pulled back in) so
+   neither mask clips the glow. The reveal travel is in em, not %, which
+   would be measured against that padded box. */
 .wordmark > span {
-  --room: max(0.3em, 48px);
   grid-area: 1 / 1;
   padding: var(--room);
   margin: calc(0.08em - var(--room)) calc(0.1em - var(--room)) calc(0.12em - var(--room));
-  translate: 0 14%;
+  translate: 0 0.126em;
   transition: translate 1.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .wordmark[data-shown="true"] > span {
