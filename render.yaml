@@ -1,0 +1,77 @@
+# Render Blueprint for the static site (https://inovixx.onrender.com).
+#
+# The headers below are the real protection the site can apply: nothing here
+# stops a determined person from copying what their browser already received
+# — a public page is public — but they stop the cheap, automated versions:
+# other sites framing or hotlinking this one, injected third-party scripts,
+# and anything sniffing content types or leaking the full URL onward.
+#
+# If this service was created from the Render dashboard rather than from this
+# blueprint, the file is ignored: copy the same headers into
+# Settings -> Headers, or connect the repo as a Blueprint. See README.
+services:
+  - type: web
+    name: inovixx
+    runtime: static
+    rootDir: inovixx
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./out
+    headers:
+      # Clickjacking: this site may not be framed anywhere, by anyone.
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+
+      # Content Security Policy. 'unsafe-inline' for scripts is unavoidable in
+      # a static export: Next inlines its bootstrap and the start-at-hero
+      # script, and a static file cannot carry a per-request nonce. Everything
+      # else is locked to this origin, so an injected <script src="evil.com">
+      # or <form action="evil.com"> is refused. Add any new third-party origin
+      # (analytics, fonts, embeds) here or it will be blocked.
+      - path: /*
+        name: Content-Security-Policy
+        value: >-
+          default-src 'self';
+          script-src 'self' 'unsafe-inline';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' data: blob:;
+          font-src 'self' data:;
+          connect-src 'self';
+          worker-src 'self' blob:;
+          media-src 'self';
+          object-src 'none';
+          base-uri 'self';
+          form-action 'self';
+          frame-ancestors 'none';
+          upgrade-insecure-requests
+
+      # Hotlinking: other origins cannot pull the images, fonts or the OG card
+      # into their own pages. Direct visits and link previews still work.
+      - path: /*
+        name: Cross-Origin-Resource-Policy
+        value: same-origin
+
+      - path: /*
+        name: Cross-Origin-Opener-Policy
+        value: same-origin
+
+      # No MIME sniffing: an uploaded file can never be executed as script.
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+
+      # Referrers leak where visitors came from; send the origin only, and
+      # nothing at all to non-HTTPS sites.
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+
+      # The site asks for none of these, so the browser may refuse them outright.
+      - path: /*
+        name: Permissions-Policy
+        value: accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=(), xr-spatial-tracking=()
+
+      # HTTPS only, for two years, including subdomains.
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=63072000; includeSubDomains; preload

@@ -1,0 +1,138 @@
+# Search engines are welcome: the site should be findable.
+User-agent: *
+Allow: /
+
+# AI training / data-mining crawlers are not. These are honoured voluntarily —
+# they keep the well-behaved crawlers out, nothing more. Anything that ignores
+# robots.txt is stopped (if at all) by the host's bot protection, not here.
+# To let any of them back in, delete its block.
+
+# OpenAI
+User-agent: GPTBot
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+# Anthropic
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: Claude-User
+Disallow: /
+
+User-agent: Claude-SearchBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+# Google / Apple AI training (their SEARCH crawlers are untouched above)
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+# Meta
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+User-agent: Meta-ExternalFetcher
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Perplexity-User
+Disallow: /
+
+# Common Crawl — the dataset most models are trained from
+User-agent: CCBot
+Disallow: /
+
+# Other AI crawlers
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: cohere-training-data-crawler
+Disallow: /
+
+User-agent: AI2Bot
+Disallow: /
+
+User-agent: AI2Bot-Dolma
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: ImagesiftBot
+Disallow: /
+
+User-agent: Omgilibot
+Disallow: /
+
+User-agent: Omgili
+Disallow: /
+
+User-agent: YouBot
+Disallow: /
+
+User-agent: Timpibot
+Disallow: /
+
+User-agent: Webzio-Extended
+Disallow: /
+
+User-agent: PanguBot
+Disallow: /
+
+User-agent: Kangaroo Bot
+Disallow: /
+
+# Bulk SEO / content scrapers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: Barkrowler
+Disallow: /
+
+User-agent: Scrapy
+Disallow: /
+
+User-agent: magpie-crawler
+Disallow: /
+
+Sitemap: https://inovixx.onrender.com/sitemap.xml

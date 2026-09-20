@@ -173,8 +173,7 @@ follows the scroll exactly as it does for everyone else.
 - **Cursor** (`ui/Cursor.tsx`): Cuberto's [mouse-follower](https://github.com/Cuberto/mouse-follower)
   on the site's GSAP, themed under `.mf-cursor` in `globals.css` — a white-hot
   orb with a violet halo that opens into a cyan-edged ring over links and
-  buttons (`-pointer`), becomes a DRAG lens over the Playground stage
-  (`data-cursor-text` on the stage) and tightens on press. Mouse and trackpad
+  buttons (`-pointer`) and tightens on press. Mouse and trackpad
   only (`(hover: hover) and (pointer: fine)`); touch, pens, the scrollbar and
   text fields (`-caret`) keep the native cursor, which is hidden only once the
   orb is following a real mouse. Reduced motion: no lag, no stretch.
@@ -206,6 +205,40 @@ follows the scroll exactly as it does for everyone else.
 - Large surfaces over the canvas use `.veil`, not `.glass`: the canvas repaints
   every frame, so a section-sized `backdrop-filter` is re-blurred every frame.
 - `three` is pinned to `~0.185` because `postprocessing` peers on `< 0.187`.
+
+## Security and scraping
+
+**What can and cannot be done.** Everything on a public page is sent to the
+visitor's browser, so anyone determined can keep a copy — and "protections"
+that block right-click, text selection or devtools only get in the way of real
+visitors, keyboard users and search engines. They are deliberately not here.
+What *is* here stops the cheap, automated version and the common attacks:
+
+- **`public/robots.txt`** — search engines stay welcome; the AI-training and
+  bulk data-mining crawlers (GPTBot, ClaudeBot, CCBot, Google-Extended,
+  PerplexityBot, Bytespider, AhrefsBot, …) are turned away. Honoured
+  voluntarily: it stops the well-behaved ones, nothing more. Delete a block to
+  let one back in. (This file used to be named `robot.txt`, which no crawler
+  ever reads.)
+- **`render.yaml`** — the security headers for the static site:
+
+  | Header | What it stops |
+  | --- | --- |
+  | `Content-Security-Policy` | Injected third-party scripts, forms posting elsewhere, plugins. `'unsafe-inline'` for scripts is unavoidable in a static export (Next inlines its bootstrap and the start-at-hero script, and a static file can carry no per-request nonce). **Add any new third-party origin — analytics, fonts, embeds — or it will be blocked.** |
+  | `X-Frame-Options` + `frame-ancestors 'none'` | Anyone framing the site (clickjacking, "my-site.com" wrappers) |
+  | `Cross-Origin-Resource-Policy` | Hotlinking the images, fonts and OG card from other sites |
+  | `X-Content-Type-Options` | MIME sniffing a file into a script |
+  | `Referrer-Policy` | Leaking the full URL to other sites |
+  | `Permissions-Policy` | Camera, mic, geolocation and the rest, none of which the site uses |
+  | `Strict-Transport-Security` | Downgrades to plain HTTP |
+
+  Render applies these only when the service comes from this blueprint. If it
+  was created in the dashboard, paste the same headers into **Settings →
+  Headers**, or connect the repo as a Blueprint. Check them after a deploy
+  with `curl -I https://inovixx.onrender.com`.
+- **Beyond the repo**: rate limiting and bot filtering belong to the host or a
+  CDN (Render's DDoS protection, or Cloudflare in front with Bot Fight Mode).
+  A scraper that ignores `robots.txt` is stopped there, not by the site.
 
 ## Before this goes live
 

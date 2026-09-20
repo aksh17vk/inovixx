@@ -5,3 +5,13 @@ build
 *.log
 .DS_Store
 *.tsbuildinfo
+
+# Secrets: never commit local env files (Next loads these automatically).
+.env
+.env.*
+!.env.example
+
+# Editor / OS noise
+.vscode/
+.idea/
+Thumbs.db
