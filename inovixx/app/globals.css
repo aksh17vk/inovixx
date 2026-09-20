@@ -420,28 +420,6 @@ html .mf-cursor.-pointer.-active::before {
   transform: scale(0.78);
 }
 
-/* The Playground stage (data-cursor-text="Drag"): a violet lens with a label. */
-html .mf-cursor.-text::before {
-  opacity: 1;
-  transform: scale(1.55);
-  background: color-mix(in srgb, var(--color-violet) 32%, transparent);
-  border-color: color-mix(in srgb, var(--color-violet-soft) 85%, transparent);
-  box-shadow:
-    0 0 30px 2px color-mix(in srgb, var(--color-violet) 45%, transparent),
-    inset 0 0 18px -4px color-mix(in srgb, var(--color-cyan) 55%, transparent);
-}
-html .mf-cursor.-text.-active::before {
-  transform: scale(1.35);
-}
-html .mf-cursor-text {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  padding-left: 0.22em; /* balance the trailing letter-spacing */
-  text-transform: uppercase;
-  color: var(--color-fg);
-}
-
 /* Text fields: step aside for the native caret. */
 html .mf-cursor.-caret::before,
 html .mf-cursor.-caret::after {
