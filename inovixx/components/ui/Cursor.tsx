@@ -13,8 +13,9 @@ MouseFollower.registerGSAP(gsap);
 // core in miniature. Mouse and trackpad only; touch keeps the platform's own
 // feedback.
 //   links, buttons, sliders   -pointer: the orb opens into a cyan-edged ring
-//   the Playground stage      data-cursor-text="Drag" (set on the stage)
 //   text fields, iframes      -caret: it steps aside for the native caret
+// The Playground stage keeps the ordinary orb — the scene's own hold ring
+// is the drag affordance there.
 const POINTER =
   'a, button, summary, label, select, [role="button"], [role="slider"], [role="tab"], input[type="range"], input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"]';
 const CARET =
