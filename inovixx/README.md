@@ -41,10 +41,11 @@ components/
   solutions/              Section 08
   about/                  Section 09
   final-cta/              Section 10
-  footer/                 Site footer with clipped giant wordmark
+  footer/                 Site footer; Wordmark — the closing INOVIXX, mask-revealed and lit
   intelligence-core/      the persistent 3D scene, quality ladder and scroll choreography
   ui/                     MagneticButton, Reveal, ScrollWords, SpotlightCard,
-                          Marquee, ScrollProgress, SectionEyebrow
+                          Marquee, ScrollProgress, SectionEyebrow,
+                          Cursor (mouse-follower, themed), HomeLink (the INOVIXX mark → hero)
 hooks/                    useLenis, useReducedMotion, useDeviceTier, useInView
 lib/                      constants.ts (copy + design tokens), scroll-store.ts,
                           play-store.ts (the visitor's rotation + playground controls)
@@ -73,6 +74,10 @@ falls back to a static SVG when WebGL2 is missing.
   indices, fades, orb scale, scroll velocity, time). `<FrameDriver/>` is mounted
   first in `Scene.tsx` so it runs before every other layer; all layers read
   `frame` rather than recomputing it.
+- The model stays on screen in full colour the whole way down the page. Behind
+  content it only eases off a touch (`CONTENT_DIM` 0.85) and the orb shrinks a
+  little; headings and copy sitting on it get a soft `.scrim` pool (in
+  `globals.css`) instead of the model being dimmed.
 - `formations.ts` procedurally generates, per scene (core / broken / products /
   technology / labs / final), both the 42-node skeleton with its
   nearest-neighbour links **and** a particle formation of any size over the
@@ -82,13 +87,13 @@ falls back to a static SVG when WebGL2 is missing.
 
 | File | What it draws |
 | --- | --- |
-| `ParticleField.tsx` | 6k–30k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro, density thinning behind content and a cursor wake. |
-| `GlassCore.tsx` | The glass orb (drei `MeshTransmissionMaterial`, real screen-space refraction), a faceted plasma nucleus, a fresnel rim and a halo. |
-| `Orbitals.tsx` | Four comets on hairline instrument rings. Orbits are re-parented per scene — tight and fast in the finale, under the node rings in Labs, wide and faint behind content. |
+| `ParticleField.tsx` | 9k–42k GPU points. One vertex shader morphs every particle between the current and next formation (staggered, with a mid-flight swirl), plus depth-of-field, an ignition intro and a cursor wake. Moving particles brighten in their own hue instead of washing out, so the model keeps its colour while you scroll. The hottest ~2% are drawn as **sparkles** — round stars with a hot centre and a soft circular glow — ~3.8% and brighter in the Playground. The model's stars are where the shine lives. In the hero and the Playground (`CORE_CALM` in `scene-mix.ts`) the particles that land on the orb *on screen* give back most of their light, so the glass and its nucleus read instead of a white blowout; everything beyond ~2.4 orb radii keeps full brightness. |
+| `GlassCore.tsx` | The glass orb (drei `MeshTransmissionMaterial`, real screen-space refraction), a faceted plasma nucleus, a fresnel rim and a halo — all eased down by `CORE_CALM` in the hero and Playground. |
+| `Orbitals.tsx` | Four comets on hairline instrument rings. Orbits are re-parented per scene — tight and fast in the finale, under the node rings in Labs, wider and slower behind content. |
 | `Scene.tsx` | The node skeleton, pulse-carrying links, camera, and the glue. |
 | `StudioEnvironment.tsx` | Procedural strip-light studio for the glass. Baked once; nothing is downloaded. |
 | `Effects.tsx` | Selective HDR bloom (+ SMAA on the top rung). |
-| `Starfield.tsx` | Distant backdrop points. |
+| `Starfield.tsx` | The background sky: ~4k calm, twinkling points on a shell around the **camera** (a skybox, so it reads the same at every zoom and on phones, whose camera pulls back). Deliberately muted and under the bloom threshold — it must never out-shine the model — but never below 75% brightness, so it is always there while scrolling. |
 
 **Hands on** (`useSceneDrag.ts`, `lib/play-store.ts`, `components/playground/`)
 
@@ -118,10 +123,14 @@ park there for a screen of scrolling instead of passing through.
 
 **Quality ladder** (`quality.ts`)
 
-`useDeviceTier` only decides where a device *starts*: desktop on `high`, tablet
-and mobile on `medium`. A drei `PerformanceMonitor` then demotes one rung at a
-time (`high → medium → low → minimal`) when the frame rate stays under the
-floor. It never promotes, so quality can't oscillate.
+Every visit renders the `medium` rung, pinned (`DEFAULT_QUALITY`) — exactly what
+`?quality=medium` does. Append `?quality=high|low|minimal` to pin another rung,
+or `?quality=auto` for the adaptive ladder described below.
+
+With `?quality=auto`, `useDeviceTier` decides where a device *starts*: desktop
+on `high`, tablet and mobile on `medium`. A drei `PerformanceMonitor` then
+demotes one rung at a time (`high → medium → low → minimal`) when the frame
+rate stays under the floor. It never promotes, so quality can't oscillate.
 
 - The floor is `min(40, displayFps × 0.7)`, where `displayFps` is sampled from
   idle `requestAnimationFrame` callbacks *before* the canvas mounts. A display
@@ -135,17 +144,45 @@ floor. It never promotes, so quality can't oscillate.
 - No rung uses MSAA — `antialias` is a context-creation option, and changing it
   would mean tearing down the WebGL context mid-session.
 
-Append `?quality=high|medium|low|minimal` to pin a rung and disable the monitor
-— useful for comparing rungs, or for seeing `high` on a machine that can't hold it.
+Pinned rungs (every one except `auto`) skip the monitor — useful for comparing
+rungs, or for seeing `high` on a machine that can't hold it.
 
 **Responsive framing.** The scene is composed for ~16:10. Narrower viewports
 pull the camera back by aspect ratio; on phones the core is also lifted above
 the stacked hero words, then settles back to centre for the closing statement.
 
 **Reduced motion.** `prefers-reduced-motion` pins *movement* — formation,
-camera, spin, orbit phase, intro — to the resting scene, but fades still follow
-the scroll, so the core dims and disappears behind content exactly as it does
-for everyone else.
+camera, spin, orbit phase, intro — to the resting scene, but brightness still
+follows the scroll exactly as it does for everyone else.
+
+### Page chrome
+
+- **Always opens at the hero.** The browser restores scroll according to the
+  mode stored on the history entry, so `hooks/useLenis.ts` keeps it `auto`
+  while the page is open (Back/Forward to a `#section` or from `/privacy`
+  still land where you were) and sets it to `manual` on `pagehide`, so the
+  reload that follows starts at the top. An inline script in
+  `app/layout.tsx` also sets `manual` early and, on a *reload*, drops any
+  `#section` the nav left in the URL (the query, e.g. `?quality=`, is kept).
+  A fresh visit to a `/#section` link still lands on that section.
+- **The INOVIXX mark → hero** (`ui/HomeLink.tsx`, in the nav and the footer).
+  On the home page it is a Lenis smooth scroll to the top (`scrollToTop()` in
+  `hooks/useLenis.ts`) that keeps the query and clears any `#section`; on other
+  routes it is a normal link home. The nav watches `#hero` too, so no link
+  stays highlighted once you are back at the top.
+- **Cursor** (`ui/Cursor.tsx`): Cuberto's [mouse-follower](https://github.com/Cuberto/mouse-follower)
+  on the site's GSAP, themed under `.mf-cursor` in `globals.css` — a white-hot
+  orb with a violet halo that opens into a cyan-edged ring over links and
+  buttons (`-pointer`) and tightens on press. Mouse and trackpad
+  only (`(hover: hover) and (pointer: fine)`); touch, pens, the scrollbar and
+  text fields (`-caret`) keep the native cursor, which is hidden only once the
+  orb is following a real mouse. Reduced motion: no lag, no stretch.
+- **Footer wordmark** (`footer/Wordmark.tsx`, styles under `.wordmark`): the
+  whole word, wiped in from below by a soft mask (`--wipe`, a registered
+  `@property` so it can transition), filled with a drifting aurora of the
+  brand colours, and lit by a beam — a brighter copy masked to a circle at the
+  mouse, or a band that sweeps across on its own. Its animations are paused
+  while it is off screen; reduced motion shows it still.
 
 **Rules worth keeping**
 
@@ -162,9 +199,46 @@ for everyone else.
   `pow(clamp(1.0 - ndv, 0.0, 1.0), k)`, because `normalize()` can overshoot 1.0.
   A NaN position drops the point; a NaN colour gets smeared across the whole
   frame by mipmap bloom. This one has bitten twice.
+- Don't paint opaque backgrounds on sections: the canvas is `fixed` behind the
+  page, so an opaque section hides the whole sky. Use a translucent tint
+  (`bg-bg-soft/25`).
 - Large surfaces over the canvas use `.veil`, not `.glass`: the canvas repaints
   every frame, so a section-sized `backdrop-filter` is re-blurred every frame.
 - `three` is pinned to `~0.185` because `postprocessing` peers on `< 0.187`.
+
+## Security and scraping
+
+**What can and cannot be done.** Everything on a public page is sent to the
+visitor's browser, so anyone determined can keep a copy — and "protections"
+that block right-click, text selection or devtools only get in the way of real
+visitors, keyboard users and search engines. They are deliberately not here.
+What *is* here stops the cheap, automated version and the common attacks:
+
+- **`public/robots.txt`** — search engines stay welcome; the AI-training and
+  bulk data-mining crawlers (GPTBot, ClaudeBot, CCBot, Google-Extended,
+  PerplexityBot, Bytespider, AhrefsBot, …) are turned away. Honoured
+  voluntarily: it stops the well-behaved ones, nothing more. Delete a block to
+  let one back in. (This file used to be named `robot.txt`, which no crawler
+  ever reads.)
+- **`render.yaml`** — the security headers for the static site:
+
+  | Header | What it stops |
+  | --- | --- |
+  | `Content-Security-Policy` | Injected third-party scripts, forms posting elsewhere, plugins. `'unsafe-inline'` for scripts is unavoidable in a static export (Next inlines its bootstrap and the start-at-hero script, and a static file can carry no per-request nonce). **Add any new third-party origin — analytics, fonts, embeds — or it will be blocked.** |
+  | `X-Frame-Options` + `frame-ancestors 'none'` | Anyone framing the site (clickjacking, "my-site.com" wrappers) |
+  | `Cross-Origin-Resource-Policy` | Hotlinking the images, fonts and OG card from other sites |
+  | `X-Content-Type-Options` | MIME sniffing a file into a script |
+  | `Referrer-Policy` | Leaking the full URL to other sites |
+  | `Permissions-Policy` | Camera, mic, geolocation and the rest, none of which the site uses |
+  | `Strict-Transport-Security` | Downgrades to plain HTTP |
+
+  Render applies these only when the service comes from this blueprint. If it
+  was created in the dashboard, paste the same headers into **Settings →
+  Headers**, or connect the repo as a Blueprint. Check them after a deploy
+  with `curl -I https://inovixx.onrender.com`.
+- **Beyond the repo**: rate limiting and bot filtering belong to the host or a
+  CDN (Render's DDoS protection, or Cloudflare in front with Bot Fight Mode).
+  A scraper that ignores `robots.txt` is stopped there, not by the site.
 
 ## Before this goes live
 

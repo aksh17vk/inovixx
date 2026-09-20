@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { FOOTER_LINKS, SITE } from "@/lib/constants";
+import { HomeLink } from "@/components/ui/HomeLink";
+import { Wordmark } from "./Wordmark";
 
 export function Footer() {
+  // The background darkens toward the bottom: the finale's core glows behind
+  // the footer, and the wordmark should be the brightest thing down here.
   return (
-    <footer className="relative overflow-hidden border-t border-line bg-bg px-6 pt-16 md:px-10 md:pt-20">
+    <footer className="relative overflow-hidden border-t border-line bg-gradient-to-b from-bg/40 via-bg/65 to-bg/90 px-6 pt-16 md:px-10 md:pt-20">
       <div className="mx-auto flex max-w-7xl flex-col gap-12 md:flex-row md:items-start md:justify-between">
         <div className="max-w-xs">
-          <span className="flex items-center gap-2.5 font-display text-sm font-semibold tracking-[0.22em] text-fg">
+          <HomeLink className="flex w-fit items-center gap-2.5 py-1 font-display text-sm font-semibold tracking-[0.22em] text-fg">
             <span className="h-2 w-2 rounded-full bg-violet-soft" />
             {SITE.name}
-          </span>
+          </HomeLink>
           <p className="mt-4 text-sm text-fg-muted">{SITE.tagline}</p>
           <p className="mt-2 text-sm text-fg-faint">AI products · intelligent systems · software.</p>
         </div>
@@ -53,11 +57,9 @@ export function Footer() {
         </a>
       </div>
 
-      {/* Giant wordmark, clipped at the bottom edge */}
-      <div aria-hidden="true" className="pointer-events-none mx-auto max-w-7xl select-none overflow-hidden">
-        <p className="translate-y-[28%] whitespace-nowrap text-center font-display text-[clamp(5rem,19vw,19rem)] font-semibold leading-none tracking-[-0.05em] text-transparent [-webkit-text-stroke:1px_rgba(244,243,248,0.08)]">
-          {SITE.name}
-        </p>
+      {/* The closing wordmark, whole and lit — see Wordmark.tsx. */}
+      <div className="mx-auto max-w-7xl pb-10 pt-6 md:pb-16 md:pt-10">
+        <Wordmark />
       </div>
     </footer>
   );

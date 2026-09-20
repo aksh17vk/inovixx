@@ -150,7 +150,7 @@ export function Scene({ reducedMotion, settings }: { reducedMotion: boolean; set
     const connections = t < 0.5 ? connectionsFor(fromKey) : connectionsFor(toKey);
     const e = t * t * (3 - 2 * t);
     // On phones body text spans the whole backdrop, so content scenes sit lower.
-    const content = settings.compact ? THREE.MathUtils.lerp(0.55, 1, dim * dim) : 1;
+    const content = settings.compact ? THREE.MathUtils.lerp(0.75, 1, dim) : 1;
 
     // --- Nodes ---
     if (instancedRef.current) {

@@ -11,7 +11,7 @@ import { frame } from "./scene-mix";
 import type { SceneSettings } from "./quality";
 import { COLORS } from "@/lib/constants";
 
-const ORB_RADIUS = 0.62;
+export const ORB_RADIUS = 0.62;
 
 const SURFACE_VERTEX = /* glsl */ `
   varying vec3 vNormal;
@@ -199,7 +199,7 @@ export function GlassCore({
   );
 
   useFrame(({ camera }, delta) => {
-    const { glowOpacity, orbScale, time } = frame;
+    const { glowOpacity, orbScale, time, coreCalm } = frame;
 
     if (rootRef.current) {
       const breathe = 1 + Math.sin(time * 0.9) * 0.025;
@@ -225,12 +225,14 @@ export function GlassCore({
       }
     }
     nucleusMaterial.uniforms.uTime.value = time;
-    nucleusMaterial.uniforms.uIntensity.value = 0.3 + glowOpacity * 1.05;
+    // In the hero and Playground the heart is calmed (see CORE_CALM in
+    // scene-mix) so the glass and the plasma read as detail, not a white disc.
+    nucleusMaterial.uniforms.uIntensity.value = (0.3 + glowOpacity * 1.05) * (1 - coreCalm * 0.4);
 
-    if (lightRef.current) lightRef.current.intensity = 3 + glowOpacity * 30;
+    if (lightRef.current) lightRef.current.intensity = (3 + glowOpacity * 30) * (1 - coreCalm * 0.45);
 
-    rimMaterial.uniforms.uOpacity.value = 0.22 + glowOpacity * 1.0;
-    haloMaterial.uniforms.uOpacity.value = 0.045 + glowOpacity * 0.5;
+    rimMaterial.uniforms.uOpacity.value = (0.22 + glowOpacity * 1.0) * (1 - coreCalm * 0.2);
+    haloMaterial.uniforms.uOpacity.value = (0.045 + glowOpacity * 0.5) * (1 - coreCalm * 0.55);
     haloMaterial.uniforms.uTime.value = time;
 
     // The halo is a flat card — keep it square to the camera. Valid only

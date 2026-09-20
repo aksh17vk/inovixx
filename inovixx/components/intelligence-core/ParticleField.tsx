@@ -8,12 +8,27 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { SPINNING_SCENES, particleFormation, prewarmParticleFormations } from "./formations";
 import { frame } from "./scene-mix";
+import { ORB_RADIUS } from "./GlassCore";
 import { scrollState, type FormationKey } from "@/lib/scroll-store";
 import { COLORS } from "@/lib/constants";
 
 // Light budget is tuned at this count; other counts rescale size and alpha so
 // every quality rung puts roughly the same amount of light on screen.
-const REFERENCE_COUNT = 30000;
+// Set to the top rung's count, so its particles keep the size and
+// brightness they were tuned at and the extra ones simply add density.
+const REFERENCE_COUNT = 42000;
+
+// Which shapes put dense shells over the orb and so need the calm (see
+// CORE_CALM in scene-mix). The Playground's other picks leave the centre
+// clear, and calming them would only dim structure the visitor chose to see.
+const FORMATION_CALM: Record<FormationKey, number> = {
+  core: 1,
+  final: 1,
+  broken: 0,
+  products: 0,
+  technology: 0,
+  labs: 0,
+};
 const INTRO_SECONDS = 2.4;
 
 // The ignition intro plays once per page load. Module scope, not a ref: a
@@ -40,6 +55,10 @@ const VERTEX = /* glsl */ `
   uniform float uDrift;
   uniform float uEnergy;
   uniform float uPulse;
+  uniform float uSparkleCut; // aSeed.x above this sparkles
+  uniform float uSparkle;    // 0..1 overall sparkle strength
+  uniform float uCoreCalm;   // 0..1, calms what sits over the orb (hero, Playground)
+  uniform float uOrbRadius;  // the glass orb's radius, world units
   uniform vec2 uPointer;
   uniform float uPointerStrength;
   uniform vec3 uColorA;
@@ -48,6 +67,8 @@ const VERTEX = /* glsl */ `
 
   varying vec3 vColor;
   varying float vAlpha;
+  varying float vSparkle;
+  varying float vSpan;
 
   const float PI = 3.14159265;
 
@@ -70,6 +91,8 @@ const VERTEX = /* glsl */ `
       gl_PointSize = 0.0;
       vColor = vec3(0.0);
       vAlpha = 0.0;
+      vSparkle = 0.0;
+      vSpan = 1.0;
       return;
     }
 
@@ -140,11 +163,34 @@ const VERTEX = /* glsl */ `
 
     float alpha = uOpacity * (0.3 + 0.7 * aSeed.x) * twinkle * depthFade * keep * ie;
     alpha *= (0.8 + 0.4 * uEnergy) * (1.0 + shock * 2.0);
+    // A calmer heart. Everything that lands on the orb on screen (the shells
+    // hugging it, and whatever of the disc or outer shell passes in front or
+    // behind at this angle) stacks up into solid white under additive
+    // blending and hides the glass. So in the hero and Playground those
+    // particles give back most of their light. Measured on screen, in world
+    // units at the core's depth, so it holds at any tilt or zoom; from ~2.4
+    // orb radii out nothing changes and the stars around the core stay bright.
+    vec4 cv = modelViewMatrix[3]; // the core (this group's origin) in view space
+    vec2 fromCore = (mv.xy / max(-mv.z, 1e-3) - cv.xy / max(-cv.z, 1e-3)) * -cv.z;
+    float heart = (1.0 - smoothstep(uOrbRadius * 1.25, uOrbRadius * 2.4, length(fromCore))) * uCoreCalm;
+    // A moderate give-back, evenly across everything over the orb: the
+    // blowout is an accumulation, so taking a little from each contributor
+    // clears it, while no single arc of the disc or the outer shell passing
+    // through darkens enough to read as a notch.
+    alpha *= 1.0 - heart * 0.45;
     px *= 1.0 + shock * 0.8;
+
+    // The model's stars: the hottest few particles sparkle.
+    vSparkle = smoothstep(uSparkleCut, uSparkleCut + 0.006, aSeed.x) * uSparkle;
+    // A sparkle's sprite needs room for its round glow; the fragment shader
+    // measures in core units, so the core itself stays the same size.
+    vSpan = 1.0 + vSparkle * 2.0;
 
     #ifdef USE_DOF
       // Out-of-focus points grow into soft bokeh discs and spread their light.
+      // Sparkles stay crisp: a blurred star isn't a star.
       float grow = min(1.0 + abs(depth - uFocus) * 0.2, 2.5);
+      grow = mix(grow, 1.0, clamp(vSparkle * 4.0, 0.0, 1.0));
       px *= grow;
       alpha /= grow * grow;
     #endif
@@ -152,19 +198,32 @@ const VERTEX = /* glsl */ `
     // Below one pixel a point can't shrink any further — fade it instead, so
     // distant particles don't turn into a field of hard single-pixel dots.
     alpha *= clamp(px * px, 0.35, 1.0);
-    gl_PointSize = clamp(px, 1.0, 28.0 * uPixelRatio);
+    // Clamp the core first, then fit the sprite around it, so the fragment
+    // shader's core units always match the sprite actually drawn: a sparkle
+    // close to the camera loses some glow, never core size. For ordinary
+    // particles vSpan stays exactly 1, so they are unchanged.
+    float corePx = clamp(px, 1.0, 28.0 * uPixelRatio);
+    float spritePx = min(corePx * vSpan, (28.0 + 20.0 * vSparkle) * uPixelRatio);
+    vSpan = spritePx / corePx;
+    gl_PointSize = spritePx;
 
     // Violet at the heart, cyan at the rim, a few pink embers.
     float r = length(p);
     vec3 c = mix(uColorA, uColorB, smoothstep(0.8, 3.4, r));
     c = mix(c, uColorC, step(0.93, aSeed.z));
-    c = mix(c, vec3(0.75, 1.0, 1.0), clamp(speed * 0.6 + shock, 0.0, 1.0));
+    // Moving particles brighten in their own hue rather than washing out to
+    // pale cyan — the model keeps its colour while you scroll. Only the
+    // Playground's pulse flashes white.
+    c = mix(c, vec3(0.75, 1.0, 1.0), clamp(shock, 0.0, 1.0));
+    c *= 1.0 + speed * 0.45;
     // A few of the largest points whiten slightly and run past 1.0 so they
     // clear the bloom threshold; saturated brand colours alone never would.
     // Kept rare and only lightly whitened — otherwise, at small point sizes,
     // they are all that survives and the whole field reads as grey.
     float hot = step(0.93, aSeed.x);
     vColor = mix(c * 1.35, mix(c, vec3(1.0), 0.22) * 2.4, hot);
+    // ...and in the calmed heart they stay in colour rather than blooming white.
+    vColor *= 1.0 - heart * hot * 0.45;
     vAlpha = alpha;
   }
 `;
@@ -172,11 +231,26 @@ const VERTEX = /* glsl */ `
 const FRAGMENT = /* glsl */ `
   varying vec3 vColor;
   varying float vAlpha;
+  varying float vSparkle;
+  varying float vSpan;
 
   void main() {
-    float d = length(gl_PointCoord - 0.5);
-    float a = smoothstep(0.5, 0.0, d);
+    // Measured in core units: identical to a plain soft dot when vSpan is 1.
+    vec2 uv = gl_PointCoord - 0.5;
+    float r = length(uv) * vSpan;
+    float a = 1.0 - smoothstep(0.0, 0.5, r);
     a *= a;
+    // Varyings are constant across a point sprite, so this branch never diverges.
+    if (vSparkle > 0.001) {
+      // Sparkles stay round: a hot pinpoint centre and a soft circular glow,
+      // with no rays. The glow fades out before the sprite's edge
+      // (r = vSpan / 2) so it is never clipped square.
+      float edge = vSpan * 0.5;
+      float fade = 1.0 - smoothstep(edge * 0.55, edge, r);
+      float glow = exp(-r * r * 1.8) * fade;
+      float pin = exp(-r * r * 22.0);
+      a += (glow * 0.55 + pin * 0.5) * vSparkle;
+    }
     gl_FragColor = vec4(vColor, a * vAlpha);
     #include <colorspace_fragment>
   }
@@ -245,6 +319,10 @@ export function ParticleField({
           uDrift: { value: 1 },
           uEnergy: { value: 0.5 },
           uPulse: { value: 99 },
+          uSparkleCut: { value: 0.985 },
+          uSparkle: { value: 1 },
+          uCoreCalm: { value: 1 },
+          uOrbRadius: { value: 0.62 },
           uPointer: { value: new THREE.Vector2(0, 0) },
           uPointerStrength: { value: 0 },
           uColorA: { value: new THREE.Color(COLORS.violetSoft) },
@@ -266,7 +344,7 @@ export function ParticleField({
   useFrame(({ gl, camera }, delta) => {
     const points = pointsRef.current;
     if (!points) return;
-    const { fromKey, toKey, t, groupOpacity, dim, velocity, time, energy, pulseAge } = frame;
+    const { fromKey, toKey, t, groupOpacity, dim, velocity, time, energy, pulseAge, playness, coreCalm, orbScale } = frame;
     const u = material.uniforms;
 
     // Swap formation buffers only when the morph's endpoints change (a scene
@@ -298,7 +376,15 @@ export function ParticleField({
     u.uDrift.value = reducedMotion ? 0 : 1;
     u.uEnergy.value = energy;
     u.uPulse.value = pulseAge;
+    // Sparkles (round, glowing stars): ~2% of particles, ~3.8% in the
+    // Playground (brighter still with its Energy), and a little softer
+    // behind content.
+    u.uSparkleCut.value = THREE.MathUtils.lerp(0.98, 0.962, playness);
+    u.uSparkle.value = dim * THREE.MathUtils.lerp(1, 0.75 + energy * 0.5, playness);
     u.uFocus.value = camera.position.length();
+    u.uCoreCalm.value =
+      coreCalm * THREE.MathUtils.lerp(FORMATION_CALM[fromKey], FORMATION_CALM[toKey], t);
+    u.uOrbRadius.value = ORB_RADIUS * orbScale;
 
     // Keep total light roughly constant across particle counts.
     const scale = Math.sqrt(REFERENCE_COUNT / count);
@@ -306,11 +392,11 @@ export function ParticleField({
 
     // Full presence in the hero and finale; a thin, soft haze behind content —
     // thinner still on phones, where body text spans the whole backdrop.
-    const content = compact ? 0.5 : 1;
-    const presence = THREE.MathUtils.lerp(content, compact ? 0.85 : 1, dim * dim);
-    const opacity = groupOpacity * (0.07 + 0.83 * dim * dim) * presence * Math.min(scale, 1.6);
+    const content = compact ? 0.7 : 1;
+    const presence = THREE.MathUtils.lerp(content, 1, dim);
+    const opacity = groupOpacity * (0.3 + 0.6 * dim) * presence * Math.min(scale, 1.6);
     u.uOpacity.value = opacity;
-    u.uDensity.value = THREE.MathUtils.lerp(0.45, 1, dim);
+    u.uDensity.value = THREE.MathUtils.lerp(0.7, 1, dim);
     points.visible = opacity > 0.004;
 
     // NDC pointer (y up), eased so the wake trails the cursor.

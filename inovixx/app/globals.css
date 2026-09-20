@@ -64,6 +64,11 @@ body {
   outline-offset: 3px;
   border-radius: 2px;
 }
+/* Script-only focus targets (tabindex="-1", e.g. <main> after the INOVIXX
+   link) mark a reading position, not a control: no ring around the page. */
+[tabindex="-1"]:focus-visible {
+  outline: none;
+}
 
 /* ------------------------------------------------------------------ */
 /* Typography helpers                                                  */
@@ -294,8 +299,9 @@ html.is-orbiting * {
   -webkit-user-select: none !important;
 }
 
-/* The press-and-hold indicator. `scale` is separate from `transform`, which
-   the hook uses to position it, so the two never fight. */
+/* The press-and-hold indicator. The hook positions it with the `translate`
+   property, which applies after `scale`; positioned with `transform`, the
+   scale below would multiply the offset and throw the ring off the pointer. */
 .orbit-ring {
   position: fixed;
   left: 0;
@@ -327,6 +333,267 @@ html.is-orbiting * {
   opacity: 1;
   scale: 0.6;
   background-color: color-mix(in srgb, var(--color-violet) 22%, transparent);
+}
+
+/* ------------------------------------------------------------------ */
+/* Cursor: Cuberto's mouse-follower (components/ui/Cursor.tsx), themed */
+/* ------------------------------------------------------------------ */
+
+/* Added only once the follower is tracking a real mouse. */
+html.has-custom-cursor,
+html.has-custom-cursor *,
+html.has-custom-cursor.is-orbiting,
+html.has-custom-cursor.is-orbiting * {
+  cursor: none !important;
+}
+/* Text fields keep the native caret; the follower hides there (-caret). */
+html.has-custom-cursor
+  :is(
+    input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+    textarea,
+    [contenteditable=""],
+    [contenteditable="true"]
+  ) {
+  cursor: text !important;
+}
+
+/* The library draws the cursor as a 48px ::before disc and scales it per
+   state; everything here is prefixed with `html` to outrank its stylesheet. */
+/* Resting: a small white-hot orb with a violet halo — the core in miniature.
+   The border is there (transparent) so states can light it without jumping. */
+html .mf-cursor::before {
+  border: 1.5px solid transparent;
+  background: radial-gradient(
+    circle,
+    #fff 0 22%,
+    var(--color-violet-soft) 48%,
+    color-mix(in srgb, var(--color-violet) 60%, transparent) 70%,
+    transparent 71%
+  );
+  box-shadow:
+    0 0 26px 6px color-mix(in srgb, var(--color-violet) 55%, transparent),
+    0 0 60px 10px color-mix(in srgb, var(--color-cyan) 12%, transparent);
+  transform: scale(0.26);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.2s ease,
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* The exact point, shown inside the ring states so precision is never lost. */
+html .mf-cursor::after {
+  content: "";
+  position: absolute;
+  top: -2.5px;
+  left: -2.5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px 1px color-mix(in srgb, var(--color-violet-soft) 90%, transparent);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 0.2s ease, transform 0.3s ease;
+}
+
+/* Links, buttons, sliders: the orb opens into a cyan-edged glass ring. */
+html .mf-cursor.-pointer::before {
+  transform: scale(0.95);
+  background: color-mix(in srgb, var(--color-violet) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-cyan) 80%, transparent);
+  box-shadow:
+    0 0 20px -2px color-mix(in srgb, var(--color-cyan) 45%, transparent),
+    inset 0 0 14px -4px color-mix(in srgb, var(--color-violet-soft) 80%, transparent);
+}
+html .mf-cursor.-pointer::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Pressed: tighten. */
+html .mf-cursor.-active::before {
+  transform: scale(0.18);
+}
+html .mf-cursor.-pointer.-active::before {
+  transform: scale(0.78);
+}
+
+/* Text fields: step aside for the native caret. */
+html .mf-cursor.-caret::before,
+html .mf-cursor.-caret::after {
+  transform: scale(0);
+}
+
+/* While the scene is held, useSceneDrag's ring closes around the orb. */
+html.is-orbiting .mf-cursor::before {
+  transform: scale(0.2);
+}
+
+/* Hidden means hidden: the state rules above outrank the library's own
+   `-hidden` transform, and nothing there covers the ::after dot or the
+   label. Fading the whole element takes all three with it. */
+html .mf-cursor.-hidden {
+  opacity: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Footer wordmark (components/footer/Wordmark.tsx)                    */
+/* ------------------------------------------------------------------ */
+
+/* Animatable, so the reveal mask can glide. Browsers without @property just
+   show the word. */
+@property --wipe {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 125%;
+}
+
+.wordmark {
+  --wipe: 0%;
+  /* Room for the beam's glow: a mask clips to its element's box, and both
+     this element and the lit copy inside it are masked. Pulled back in
+     below, so the layout is what it would be without it. */
+  --room: max(0.3em, 48px);
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: var(--room);
+  margin: calc(-1 * var(--room));
+  font-size: clamp(4rem, 18.5vw, 16.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+  /* The reveal: a soft-edged mask rising from below the baseline. */
+  -webkit-mask-image: linear-gradient(to top, #000 calc(var(--wipe) - 25%), transparent var(--wipe));
+  mask-image: linear-gradient(to top, #000 calc(var(--wipe) - 25%), transparent var(--wipe));
+  transition: --wipe 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wordmark[data-shown="true"] {
+  --wipe: 125%;
+}
+
+/* Both copies share one grid cell, so the beam sits exactly on the fill,
+   each padded out by the same --room as the parent (and pulled back in) so
+   neither mask clips the glow. The reveal travel is in em, not %, which
+   would be measured against that padded box. */
+.wordmark > span {
+  grid-area: 1 / 1;
+  padding: var(--room);
+  margin: calc(0.08em - var(--room)) calc(0.1em - var(--room)) calc(0.12em - var(--room));
+  translate: 0 0.126em;
+  transition: translate 1.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wordmark[data-shown="true"] > span {
+  translate: 0 0;
+}
+
+/* The aurora: the core's palette drifting through the letters, over a hairline
+   edge that keeps the shapes crisp where the gradient runs dark. The tile is
+   twice the width and starts and ends on the same colour, so a 200% shift
+   loops without a seam. */
+.wordmark-fill {
+  background-image: linear-gradient(
+    100deg,
+    var(--color-violet-soft) 0%,
+    var(--color-blue) 18%,
+    var(--color-cyan) 38%,
+    var(--color-fg) 50%,
+    var(--color-pink) 66%,
+    var(--color-violet) 84%,
+    var(--color-violet-soft) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--color-fg) 16%, transparent);
+  animation: wordmark-aurora 16s linear infinite paused;
+}
+@keyframes wordmark-aurora {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+/* The beam: a white-hot copy of the word, shown only through a mask. */
+.wordmark-beam {
+  color: var(--color-fg);
+  text-shadow:
+    0 0 18px color-mix(in srgb, var(--color-cyan) 70%, transparent),
+    0 0 48px color-mix(in srgb, var(--color-violet) 60%, transparent);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  transition: opacity 400ms ease;
+}
+/* Following the mouse: a soft spotlight around the pointer. */
+.wordmark[data-beam="cursor"] .wordmark-beam {
+  -webkit-mask-image: radial-gradient(
+    circle clamp(70px, 11vw, 190px) at var(--mx, -50%) var(--my, 50%),
+    #000 0%,
+    rgba(0, 0, 0, 0.45) 45%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle clamp(70px, 11vw, 190px) at var(--mx, -50%) var(--my, 50%),
+    #000 0%,
+    rgba(0, 0, 0, 0.45) 45%,
+    transparent 100%
+  );
+}
+/* On its own: a slanted band of light sweeps across every few seconds. The
+   mask is 2.5x the word's width; 150% → -50% carries the band from just off
+   the left edge to just off the right. */
+.wordmark[data-beam="auto"] .wordmark-beam {
+  -webkit-mask-image: linear-gradient(105deg, transparent 42%, #000 50%, transparent 58%);
+  mask-image: linear-gradient(105deg, transparent 42%, #000 50%, transparent 58%);
+  -webkit-mask-size: 250% 100%;
+  mask-size: 250% 100%;
+  animation: wordmark-sweep 6.5s cubic-bezier(0.45, 0, 0.2, 1) infinite paused;
+}
+@keyframes wordmark-sweep {
+  0% {
+    -webkit-mask-position: 150% 0;
+    mask-position: 150% 0;
+  }
+  55%,
+  100% {
+    -webkit-mask-position: -50% 0;
+    mask-position: -50% 0;
+  }
+}
+
+/* Motion runs only while the word is on screen. */
+.wordmark[data-inview="true"] .wordmark-fill,
+.wordmark[data-inview="true"] .wordmark-beam {
+  animation-play-state: running;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordmark {
+    --wipe: 125%;
+    transition: none;
+  }
+  .wordmark > span {
+    translate: 0 0;
+    transition: none;
+  }
+  .wordmark-fill,
+  .wordmark-beam {
+    animation: none;
+  }
+  /* No sweeping band; the beam still answers the mouse, which is not motion
+     of its own. */
+  .wordmark[data-beam="auto"] .wordmark-beam {
+    opacity: 0;
+  }
 }
 
 /* Playground sliders. */

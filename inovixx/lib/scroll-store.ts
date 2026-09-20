@@ -7,8 +7,9 @@ export const FORMATION_KEYS = ["core", "broken", "products", "technology", "labs
 export type FormationKey = (typeof FORMATION_KEYS)[number];
 
 // A scene is a stop in the scroll story. Most are a formation; two are not:
-//   dormant    — the network has faded out (it keeps the labs shape while it does)
 //   playground — the visitor picks the formation (see lib/play-store.ts)
+//   dormant    — the section right after it, which keeps the visitor's pick
+//                (named for when the model used to fade out there)
 export type SceneName = FormationKey | "dormant" | "playground";
 
 export const SCENE_ORDER: SceneName[] = [
@@ -18,9 +19,9 @@ export const SCENE_ORDER: SceneName[] = [
   "technology",
   "labs",
   "playground",
-  "dormant", // principles
-  "dormant", // solutions
-  "dormant", // about
+  "dormant", // principles — keeps the Playground pick
+  "broken", // solutions
+  "core", // about
   "final",
 ];
 

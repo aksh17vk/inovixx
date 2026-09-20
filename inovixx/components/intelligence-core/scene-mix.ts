@@ -5,19 +5,29 @@ import { play } from "@/lib/play-store";
 // need to know about "where are we in the scroll story" is derived here so
 // the particle field, glass core, orbitals and post-processing stay in sync.
 //
-//                     core  broken products tech  labs  PLAY  dormant x3      final
+//                   core broken prod  tech  labs  PLAY  princ solut about final
+
+// The model stays on screen, in full colour, the whole way down the page —
+// it is the site's signature and it should look alive while you scroll.
+// Text sitting directly on it is protected by soft `.scrim` pools in the
+// sections instead of by dimming the model.
 
 // Visibility of the network (nodes, lines, particles).
-const BASE_OPACITY = [1, 1, 1, 1, 1, 1, 0, 0, 0, 0];
+const BASE_OPACITY = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 // Energy of the core: nucleus, halo, comets, bloom.
-const GLOW_BASE = [0.7, 0.16, 0.14, 0.16, 0.18, 0.7, 0.08, 0.08, 0.08, 0.08];
-// How much of the network's opacity survives outside the "hero moment" scenes —
-// content-heavy sections keep the core as a faint backdrop rather than a
-// foreground object competing with text. The playground is a hero moment.
-const CONTENT_DIM = [1, 0.4, 0.4, 0.4, 0.4, 1, 0, 0, 0, 1];
-// Scale of the glass orb. It can't fade like the additive layers do, so it
-// shrinks out of the way instead and disappears entirely while dormant.
-const ORB_SCALE = [1, 0.46, 0.4, 0.4, 0.46, 1, 0, 0, 0, 1.12];
+const GLOW_BASE = [0.7, 0.45, 0.42, 0.45, 0.48, 0.7, 0.45, 0.45, 0.45, 1];
+// How much of the full hero intensity the network keeps. Only a touch below
+// 1 behind content — enough to take the edge off, never a visible fade.
+const CONTENT_DIM = [1, 0.85, 0.85, 0.85, 0.85, 1, 0.85, 0.85, 0.85, 1];
+// Scale of the glass orb: a little smaller behind content, so it doesn't sit
+// under a heading at full size.
+const ORB_SCALE = [1, 0.62, 0.56, 0.56, 0.62, 1, 0.62, 0.6, 0.6, 1.12];
+// How much the heart of the core is calmed. The hero and the Playground look
+// straight into it at full size, where the densest particle shells, the
+// nucleus and the halo otherwise add up to a white blowout that hides the
+// glass. Only the centre calms — the outer shell, the disc and every star
+// around it keep their full light.
+const CORE_CALM = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0];
 
 export const CAMERA_POS: [number, number, number][] = [
   [0, 0, 6.3],
@@ -37,11 +47,6 @@ const PLAY_MORPH_SECONDS = 1.6;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-
-function triangleRiseFall(t: number) {
-  if (t < 0.5) return t * 2;
-  return 1 - (t - 0.5) * 2 * 0.85;
-}
 
 function split(master: number) {
   const idx = Math.min(LAST_SCENE - 1, Math.floor(master));
@@ -79,6 +84,8 @@ export const frame = {
   glowOpacity: GLOW_BASE[0],
   dim: 1,
   orbScale: 1,
+  /** 0..1 how much the heart of the core is calmed (see CORE_CALM). */
+  coreCalm: 1,
   /** 0..1 progress into the closing scene. */
   finale: 0,
   /** 0..1 how much of the playground scene is in effect. */
@@ -109,16 +116,11 @@ export function updateFrame(reducedMotion: boolean, delta: number) {
 
   // --- Fades always follow the real scroll position -------------------------
   const fade = split(smoothMaster);
-  if (fade.idx === LAST_SCENE - 1) {
-    // Final convergence: the network rises back in, then settles.
-    frame.groupOpacity = triangleRiseFall(fade.t);
-    frame.glowOpacity = lerp(0.08, 1, fade.t);
-  } else {
-    frame.groupOpacity = lerp(BASE_OPACITY[fade.idx], BASE_OPACITY[fade.next], fade.t);
-    frame.glowOpacity = lerp(GLOW_BASE[fade.idx], GLOW_BASE[fade.next], fade.t);
-  }
+  frame.groupOpacity = lerp(BASE_OPACITY[fade.idx], BASE_OPACITY[fade.next], fade.t);
+  frame.glowOpacity = lerp(GLOW_BASE[fade.idx], GLOW_BASE[fade.next], fade.t);
   frame.dim = lerp(CONTENT_DIM[fade.idx], CONTENT_DIM[fade.next], fade.t);
   frame.orbScale = lerp(ORB_SCALE[fade.idx], ORB_SCALE[fade.next], fade.t);
+  frame.coreCalm = lerp(CORE_CALM[fade.idx], CORE_CALM[fade.next], fade.t);
   frame.finale = fade.idx === LAST_SCENE - 1 ? fade.t : 0;
   frame.playness =
     fade.idx === PLAYGROUND_SCENE ? 1 - fade.t : fade.next === PLAYGROUND_SCENE ? fade.t : 0;

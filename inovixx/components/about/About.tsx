@@ -4,10 +4,10 @@ import { ScrollWords } from "@/components/ui/ScrollWords";
 
 export function About() {
   return (
-    <section id="about" className="relative bg-bg-soft px-6 py-28 md:px-10 md:py-40">
+    <section id="about" className="relative bg-bg-soft/25 px-6 py-28 md:px-10 md:py-40">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-12 md:grid-cols-[1fr_1.4fr] md:gap-20">
-          <div>
+          <div className="scrim">
             <Reveal>
               <SectionEyebrow index="09" label="ABOUT" />
             </Reveal>
@@ -22,7 +22,7 @@ export function About() {
             </Reveal>
           </div>
 
-          <div className="md:pt-12">
+          <div className="scrim md:pt-12">
             <ScrollWords
               text="INOVIXX is an early-stage technology company. Not a large team with a long history — builders working on AI products, agentic systems, and software we believe are worth building."
               className="font-display text-2xl font-medium leading-snug tracking-tight text-fg md:text-[2rem]"
