@@ -5,7 +5,6 @@ import { PerformanceMonitor } from "@react-three/drei";
 import { Suspense, useEffect, useState } from "react";
 import { Scene } from "./Scene";
 import {
-  autoLadder,
   forcedQuality,
   rememberDemotions,
   rememberedDemotions,
@@ -52,7 +51,6 @@ export function IntelligenceCore() {
   const reducedMotion = useReducedMotion();
   const { tier, ready } = useDeviceTier();
   const [forced] = useState<QualityLevel | null>(forcedQuality);
-  const [auto] = useState<boolean>(autoLadder);
   // Rungs the monitor has taken away, per tier (a resized window or rotated
   // tablet starts from its own baseline). Seeded from the last visit.
   const [demotions, setDemotions] = useState<Partial<Record<DeviceTier, number>>>({});
@@ -84,7 +82,7 @@ export function IntelligenceCore() {
   }
 
   const taken = demotions[tier] ?? rememberedDemotions(tier);
-  let level = forced ?? startingLevel(tier, auto);
+  let level = forced ?? startingLevel(tier);
   if (!forced) for (let i = 0; i < taken; i++) level = stepDown(level);
   const settings = settingsFor(tier, level);
 

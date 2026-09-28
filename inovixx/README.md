@@ -123,16 +123,14 @@ park there for a screen of scrolling instead of passing through.
 
 **Quality ladder** (`quality.ts`)
 
-Every visit starts on the `medium` rung (`DEFAULT_QUALITY`) — the look the site
-is tuned for. That is a *ceiling*, not a pin: a drei `PerformanceMonitor`
-demotes one rung at a time (`medium → low → minimal`) whenever the frame rate
-stays under the floor, because a stutter costs more than a softer pixel. It
-never promotes, so quality can't oscillate — a device that can hold `medium`
-always sees `medium`.
+Every visit renders the `medium` rung, pinned (`DEFAULT_QUALITY`) — exactly what
+`?quality=medium` does. Append `?quality=high|low|minimal` to pin another rung,
+or `?quality=auto` for the adaptive ladder described below.
 
-`?quality=high|medium|low|minimal` pins a rung and turns the monitor off.
-`?quality=auto` starts from the device tier instead of the ceiling (desktop on
-`high`, tablet and mobile on `medium`), monitor still running.
+With `?quality=auto`, `useDeviceTier` decides where a device *starts*: desktop
+on `high`, tablet and mobile on `medium`. A drei `PerformanceMonitor` then
+demotes one rung at a time (`high → medium → low → minimal`) when the frame
+rate stays under the floor. It never promotes, so quality can't oscillate.
 
 - The floor is `min(40, displayFps × 0.7)`, where `displayFps` is sampled from
   idle `requestAnimationFrame` callbacks *before* the canvas mounts. A display
@@ -146,10 +144,8 @@ always sees `medium`.
 - No rung uses MSAA — `antialias` is a context-creation option, and changing it
   would mean tearing down the WebGL context mid-session.
 
-Mobile jank, while we are here: `ScrollTrigger` is configured with
-`ignoreMobileResize`, and `useLenis`'s own resize handler refreshes only when
-the *width* changes. A phone's address bar sliding away fires `resize`
-mid-scroll with the same width, and a refresh re-measures every trigger.
+Pinned rungs (every one except `auto`) skip the monitor — useful for comparing
+rungs, or for seeing `high` on a machine that can't hold it.
 
 **Responsive framing.** The scene is composed for ~16:10. Narrower viewports
 pull the camera back by aspect ratio; on phones the core is also lifted above

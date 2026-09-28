@@ -1,12 +1,10 @@
 import type { DeviceTier } from "@/hooks/useDeviceTier";
 
 // What the 3D scene is allowed to spend. Every WebGL2 device renders the same
-// scene and starts on DEFAULT_QUALITY — the look the site is tuned for. That
-// is a ceiling, not a pin: a drei PerformanceMonitor steps a device down a
-// rung whenever it can't hold its frame rate, because a stutter costs more
-// than a softer pixel. It never steps back up, so quality can't oscillate.
-// `?quality=<rung>` pins one (monitor off); `?quality=auto` starts from the
-// device tier instead of the ceiling.
+// scene, pinned to DEFAULT_QUALITY unless `?quality=` asks for another rung.
+// With `?quality=auto` the adaptive ladder takes over instead: `useDeviceTier`
+// picks where on it to start and a PerformanceMonitor steps down if the
+// machine can't hold its frame rate (never back up, so it can't oscillate).
 export type QualityLevel = "high" | "medium" | "low" | "minimal";
 
 export type SceneSettings = {
@@ -69,8 +67,7 @@ const LADDER: Record<QualityLevel, Rung> = {
 
 export const QUALITY_ORDER: QualityLevel[] = ["high", "medium", "low", "minimal"];
 
-export function startingLevel(tier: DeviceTier, auto = false): QualityLevel {
-  if (!auto) return DEFAULT_QUALITY;
+export function startingLevel(tier: DeviceTier): QualityLevel {
   return tier === "desktop" ? "high" : "medium";
 }
 
@@ -87,23 +84,19 @@ export function stepDown(level: QualityLevel): QualityLevel {
   return QUALITY_ORDER[Math.min(QUALITY_ORDER.length - 1, QUALITY_ORDER.indexOf(level) + 1)];
 }
 
-// Where every visit starts, and the most it is ever allowed to spend.
+// Every visit renders this rung, pinned (monitor off) — exactly what
+// `?quality=medium` does. It is the look the site is tuned for, and it holds
+// its frame rate on integrated GPUs and phones.
 export const DEFAULT_QUALITY: QualityLevel = "medium";
 
-// `?quality=high|medium|low|minimal` pins a rung and turns the monitor off —
-// handy for comparing them, or for seeing `high` on a machine that can't hold
-// it. Anything else (including no parameter at all, and `auto`) returns null:
-// the monitor runs.
+// `?quality=high|medium|low|minimal` pins another rung — handy for comparing
+// them, or for looking at "high" on a machine that can't hold it.
+// `?quality=auto` returns null: the adaptive ladder and its monitor.
 export function forcedQuality(): QualityLevel | null {
   if (typeof window === "undefined") return null;
   const value = new URLSearchParams(window.location.search).get("quality");
-  return QUALITY_ORDER.includes(value as QualityLevel) ? (value as QualityLevel) : null;
-}
-
-// `?quality=auto` lets a strong desktop start above the ceiling, on `high`.
-export function autoLadder(): boolean {
-  if (typeof window === "undefined") return false;
-  return new URLSearchParams(window.location.search).get("quality") === "auto";
+  if (value === "auto") return null;
+  return QUALITY_ORDER.includes(value as QualityLevel) ? (value as QualityLevel) : DEFAULT_QUALITY;
 }
 
 // --- Remembering where a device settled -------------------------------------

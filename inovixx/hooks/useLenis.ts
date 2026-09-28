@@ -6,16 +6,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 
 let registered = false;
-
-function register() {
-  if (registered) return;
-  gsap.registerPlugin(ScrollTrigger);
-  // A refresh re-measures every trigger. On phones the address bar collapsing
-  // and expanding fires a resize mid-scroll, and refreshing there is pure
-  // stutter for no gain, so ScrollTrigger is told to sit those out.
-  ScrollTrigger.config({ ignoreMobileResize: true });
-  registered = true;
-}
 // The running instance, so UI elsewhere (the logo) can drive the same smooth
 // scroll instead of fighting it with a native jump.
 let active: Lenis | null = null;
@@ -39,7 +29,10 @@ export function useLenis(enabled: boolean) {
   // registration and writes it back on every refresh, so a bare
   // history.scrollRestoration = "auto" would not stick.
   useEffect(() => {
-    register();
+    if (!registered) {
+      gsap.registerPlugin(ScrollTrigger);
+      registered = true;
+    }
     let t = 0;
     const toAuto = () => {
       window.clearTimeout(t);
@@ -67,7 +60,10 @@ export function useLenis(enabled: boolean) {
   }, []);
 
   useEffect(() => {
-    register();
+    if (!registered) {
+      gsap.registerPlugin(ScrollTrigger);
+      registered = true;
+    }
 
     if (!enabled) {
       // Reduced-motion / low-power path: skip smooth scroll, let the
@@ -90,14 +86,7 @@ export function useLenis(enabled: boolean) {
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
 
-    // Same reason as above: a phone's address bar changes the height, never
-    // the width, so only a width change means the layout really moved.
-    let width = window.innerWidth;
-    const resize = () => {
-      if (window.innerWidth === width) return;
-      width = window.innerWidth;
-      ScrollTrigger.refresh();
-    };
+    const resize = () => ScrollTrigger.refresh();
     window.addEventListener("resize", resize);
     // Give layout a tick to settle (fonts / canvas) before measuring.
     const t = window.setTimeout(() => ScrollTrigger.refresh(), 200);
