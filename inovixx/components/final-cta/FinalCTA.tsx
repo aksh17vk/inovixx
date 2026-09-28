@@ -27,8 +27,8 @@ export function FinalCTA() {
           </p>
         </Reveal>
         <Reveal delay={340}>
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row" id="contact">
-            <MagneticButton size="lg">
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <MagneticButton href="#contact" size="lg">
               Start a Conversation
               <Arrow />
             </MagneticButton>

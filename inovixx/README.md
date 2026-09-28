@@ -215,6 +215,30 @@ follows the scroll exactly as it does for everyone else.
   every frame, so a section-sized `backdrop-filter` is re-blurred every frame.
 - `three` is pinned to `~0.185` because `postprocessing` peers on `< 0.187`.
 
+## Contact form
+
+It is a dialog, not a section: every "Start a Conversation", "Let's Talk",
+"Contact" and "Something else?" control on the site is an anchor to
+`#contact`, and `components/contact/ContactDialog.tsx` listens for those
+clicks and opens instead — so anything new pointing at `#contact` joins in for
+free. A real `<dialog>` with `showModal()` traps focus, makes the page behind
+it inert, closes on Escape and gives the backdrop its own pseudo-element.
+
+`ContactForm.tsx` collects name, email, company and message, validates on
+submit (the first problem takes focus, each error clears as it is answered)
+and carries a hidden honeypot field for bots.
+
+**Where an enquiry goes** — `lib/contact.ts`:
+
+| | |
+| --- | --- |
+| `CONTACT_EMAIL` | set to `inovixx17@gmail.com`. The enquiry opens in the visitor's own mail client, addressed and written; **they still press send there**, so nothing is delivered by the site itself. No server, nothing to keep running. |
+| `CONTACT_ENDPOINT` | empty. Any URL that takes a JSON POST — a form service, a serverless function, a database behind an API. Set it and it takes over from the mail client, and the form reports "Thank you — we'll be in touch" instead. |
+
+Both are plain strings because a static export has no server to read an
+environment variable at request time. The form itself does not change either
+way; it only reports which route the enquiry took.
+
 ## Security and scraping
 
 **What can and cannot be done.** Everything on a public page is sent to the
@@ -254,9 +278,9 @@ What *is* here stops the cheap, automated version and the common attacks:
 A few things are placeholders on purpose, per the "no invented information"
 brief — swap these in when they're real:
 
-- **Contact**: the "Start a Conversation" button on the final section has no
-  destination yet (no real inbox/form exists). Wire it to a mailto, contact
-  form, or scheduling link.
+- **Contact**: live, but through the visitor's mail client (`CONTACT_EMAIL`).
+  For enquiries that arrive without anyone opening a mail app — and to keep a
+  record of them — set `CONTACT_ENDPOINT` (see "Contact form" above).
 - **Privacy / Terms** (`app/privacy`, `app/terms`): honest "coming soon"
   placeholders, not real policies. Replace with actual legal copy.
 - **`SITE.url`** in `lib/constants.ts` is a placeholder domain — update it

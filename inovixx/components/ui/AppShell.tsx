@@ -6,6 +6,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { ScrollChoreography } from "@/components/intelligence-core/ScrollChoreography";
 import { Cursor } from "@/components/ui/Cursor";
 import { Loader } from "@/components/ui/Loader";
+import { ContactDialog } from "@/components/contact/ContactDialog";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const reducedMotion = useReducedMotion();
@@ -16,6 +17,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <ScrollChoreography motion={!reducedMotion} />
       {children}
       <Cursor />
+      <ContactDialog />
       <Loader />
     </>
   );

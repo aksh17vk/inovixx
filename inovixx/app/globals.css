@@ -469,6 +469,224 @@ html.is-loading {
 }
 
 /* ------------------------------------------------------------------ */
+/* Contact dialog (components/contact/ContactDialog.tsx)               */
+/* ------------------------------------------------------------------ */
+
+.dialog {
+  margin: auto; /* a <dialog> is not centred by default */
+  max-width: min(46rem, calc(100vw - 2rem));
+  width: 100%;
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: visible;
+}
+.dialog::backdrop {
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: dialog-veil 300ms ease forwards;
+}
+.dialog[open] {
+  animation: dialog-rise 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Leaving is the arrival reversed and quicker — see EXIT_MS in the component,
+   which waits this long before it really closes. */
+.dialog[data-phase="closing"] {
+  animation: dialog-sink 260ms ease forwards;
+}
+.dialog[data-phase="closing"]::backdrop {
+  animation: dialog-veil-out 260ms ease forwards;
+}
+@keyframes dialog-veil {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes dialog-veil-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes dialog-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+}
+@keyframes dialog-sink {
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+/* The close control: a ring that lights up, and an X that turns into place. */
+.dialog-close {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: -0.5rem -0.5rem 0 0;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition:
+    border-color 300ms ease,
+    background-color 300ms ease,
+    transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.dialog-close:hover {
+  border-color: color-mix(in srgb, var(--color-violet-soft) 55%, transparent);
+  background-color: color-mix(in srgb, var(--color-violet) 12%, transparent);
+  transform: rotate(90deg);
+}
+.dialog-close:active {
+  transform: rotate(90deg) scale(0.9);
+}
+/* Drawn rather than typed, so the two strokes can be the same weight as the
+   hairlines elsewhere and can thicken on hover. */
+.dialog-close-x {
+  position: relative;
+  width: 14px;
+  height: 14px;
+}
+.dialog-close-x::before,
+.dialog-close-x::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--color-fg-muted);
+  transition: background-color 300ms ease;
+}
+.dialog-close-x::before {
+  transform: rotate(45deg);
+}
+.dialog-close-x::after {
+  transform: rotate(-45deg);
+}
+.dialog-close:hover .dialog-close-x::before,
+.dialog-close:hover .dialog-close-x::after {
+  background: var(--color-fg);
+}
+
+/* Sent: a ring closes around a tick that draws itself. */
+.sent {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 0 0.5rem;
+  text-align: center;
+}
+.sent-mark {
+  width: 64px;
+  height: 64px;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sent-ring {
+  stroke: color-mix(in srgb, var(--color-cyan) 70%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 183;
+  stroke-dashoffset: 183;
+  transform-origin: center;
+  transform: rotate(-90deg);
+  animation: sent-draw 620ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.sent-tick {
+  stroke: var(--color-fg);
+  stroke-width: 2.5;
+  stroke-dasharray: 44;
+  stroke-dashoffset: 44;
+  animation: sent-draw 380ms cubic-bezier(0.16, 1, 0.3, 1) 420ms forwards;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-cyan) 55%, transparent));
+}
+@keyframes sent-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.sent-title,
+.sent-note {
+  opacity: 0;
+  animation: sent-in 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.sent-title {
+  animation-delay: 620ms;
+}
+.sent-note {
+  animation-delay: 740ms;
+}
+@keyframes sent-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.dialog-panel {
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 24px;
+  padding: 1.75rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-bg-panel) 96%, transparent),
+    color-mix(in srgb, var(--color-bg) 96%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--color-fg) 9%, transparent);
+  box-shadow: 0 40px 120px -40px rgba(0, 0, 0, 0.9);
+}
+@media (min-width: 768px) {
+  .dialog-panel {
+    padding: 2.5rem;
+  }
+}
+
+/* A modal dialog does not stop the page behind it from scrolling. */
+html.is-dialog-open {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open],
+  .dialog[data-phase="closing"],
+  .dialog::backdrop,
+  .dialog[data-phase="closing"]::backdrop,
+  .sent-ring,
+  .sent-tick,
+  .sent-title,
+  .sent-note {
+    animation: none;
+  }
+  /* Without the animation they must still end up visible. */
+  .sent-ring,
+  .sent-tick {
+    stroke-dashoffset: 0;
+  }
+  .sent-title,
+  .sent-note {
+    opacity: 1;
+  }
+  .dialog-close:hover,
+  .dialog-close:active {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Form fields (components/contact/ContactForm.tsx)                    */
 /* ------------------------------------------------------------------ */
 
