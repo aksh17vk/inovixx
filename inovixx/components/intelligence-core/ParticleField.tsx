@@ -18,17 +18,6 @@ import { COLORS } from "@/lib/constants";
 // brightness they were tuned at and the extra ones simply add density.
 const REFERENCE_COUNT = 42000;
 
-// Which shapes put dense shells over the orb and so need the calm (see
-// CORE_CALM in scene-mix). The Playground's other picks leave the centre
-// clear, and calming them would only dim structure the visitor chose to see.
-const FORMATION_CALM: Record<FormationKey, number> = {
-  core: 1,
-  final: 1,
-  broken: 0,
-  products: 0,
-  technology: 0,
-  labs: 0,
-};
 const INTRO_SECONDS = 2.4;
 
 // The ignition intro plays once per page load. Module scope, not a ref: a
@@ -57,7 +46,6 @@ const VERTEX = /* glsl */ `
   uniform float uPulse;
   uniform float uSparkleCut; // aSeed.x above this sparkles
   uniform float uSparkle;    // 0..1 overall sparkle strength
-  uniform float uCoreCalm;   // 0..1, calms what sits over the orb (hero, Playground)
   uniform float uOrbRadius;  // the glass orb's radius, world units
   uniform vec2 uPointer;
   uniform float uPointerStrength;
@@ -166,13 +154,14 @@ const VERTEX = /* glsl */ `
     // A calmer heart. Everything that lands on the orb on screen (the shells
     // hugging it, and whatever of the disc or outer shell passes in front or
     // behind at this angle) stacks up into solid white under additive
-    // blending and hides the glass. So in the hero and Playground those
-    // particles give back most of their light. Measured on screen, in world
+    // blending and hides the glass, so those particles give back part of
+    // their light — anywhere on the page, because stars crossing the core
+    // flare it wherever it is. Measured on screen, in world
     // units at the core's depth, so it holds at any tilt or zoom; from ~2.4
     // orb radii out nothing changes and the stars around the core stay bright.
     vec4 cv = modelViewMatrix[3]; // the core (this group's origin) in view space
     vec2 fromCore = (mv.xy / max(-mv.z, 1e-3) - cv.xy / max(-cv.z, 1e-3)) * -cv.z;
-    float heart = (1.0 - smoothstep(uOrbRadius * 1.25, uOrbRadius * 2.4, length(fromCore))) * uCoreCalm;
+    float heart = 1.0 - smoothstep(uOrbRadius * 1.25, uOrbRadius * 2.4, length(fromCore));
     // A moderate give-back, evenly across everything over the orb: the
     // blowout is an accumulation, so taking a little from each contributor
     // clears it, while no single arc of the disc or the outer shell passing
@@ -321,7 +310,6 @@ export function ParticleField({
           uPulse: { value: 99 },
           uSparkleCut: { value: 0.985 },
           uSparkle: { value: 1 },
-          uCoreCalm: { value: 1 },
           uOrbRadius: { value: 0.62 },
           uPointer: { value: new THREE.Vector2(0, 0) },
           uPointerStrength: { value: 0 },
@@ -344,7 +332,7 @@ export function ParticleField({
   useFrame(({ gl, camera }, delta) => {
     const points = pointsRef.current;
     if (!points) return;
-    const { fromKey, toKey, t, groupOpacity, dim, velocity, time, energy, pulseAge, playness, coreCalm, orbScale } = frame;
+    const { fromKey, toKey, t, groupOpacity, dim, velocity, time, energy, pulseAge, playness, orbScale } = frame;
     const u = material.uniforms;
 
     // Swap formation buffers only when the morph's endpoints change (a scene
@@ -382,8 +370,6 @@ export function ParticleField({
     u.uSparkleCut.value = THREE.MathUtils.lerp(0.98, 0.962, playness);
     u.uSparkle.value = dim * THREE.MathUtils.lerp(1, 0.75 + energy * 0.5, playness);
     u.uFocus.value = camera.position.length();
-    u.uCoreCalm.value =
-      coreCalm * THREE.MathUtils.lerp(FORMATION_CALM[fromKey], FORMATION_CALM[toKey], t);
     u.uOrbRadius.value = ORB_RADIUS * orbScale;
 
     // Keep total light roughly constant across particle counts.

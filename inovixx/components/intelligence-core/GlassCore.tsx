@@ -199,7 +199,7 @@ export function GlassCore({
   );
 
   useFrame(({ camera }, delta) => {
-    const { glowOpacity, orbScale, time, coreCalm } = frame;
+    const { glowOpacity, orbScale, time } = frame;
 
     if (rootRef.current) {
       const breathe = 1 + Math.sin(time * 0.9) * 0.025;
@@ -225,14 +225,16 @@ export function GlassCore({
       }
     }
     nucleusMaterial.uniforms.uTime.value = time;
-    // In the hero and Playground the heart is calmed (see CORE_CALM in
-    // scene-mix) so the glass and the plasma read as detail, not a white disc.
-    nucleusMaterial.uniforms.uIntensity.value = (0.3 + glowOpacity * 1.05) * (1 - coreCalm * 0.4);
+    // The orb is held back everywhere, not only in the hero and Playground:
+    // with stars crossing in front of it at full glow it reads as a white
+    // ball, and the glass and plasma detail is lost. These are the factors
+    // the hero was already tuned to, now applied in every section.
+    nucleusMaterial.uniforms.uIntensity.value = (0.3 + glowOpacity * 1.05) * 0.6;
 
-    if (lightRef.current) lightRef.current.intensity = (3 + glowOpacity * 30) * (1 - coreCalm * 0.45);
+    if (lightRef.current) lightRef.current.intensity = (3 + glowOpacity * 30) * 0.55;
 
-    rimMaterial.uniforms.uOpacity.value = (0.22 + glowOpacity * 1.0) * (1 - coreCalm * 0.2);
-    haloMaterial.uniforms.uOpacity.value = (0.045 + glowOpacity * 0.5) * (1 - coreCalm * 0.55);
+    rimMaterial.uniforms.uOpacity.value = (0.22 + glowOpacity * 1.0) * 0.8;
+    haloMaterial.uniforms.uOpacity.value = (0.045 + glowOpacity * 0.5) * 0.45;
     haloMaterial.uniforms.uTime.value = time;
 
     // The halo is a flat card — keep it square to the camera. Valid only
@@ -244,9 +246,12 @@ export function GlassCore({
     <group ref={rootRef}>
       <pointLight ref={lightRef} color={COLORS.violet} intensity={10} distance={10} decay={2} />
 
-      {/* Soft volumetric halo. Depth-tested, so the orb itself occludes its centre. */}
+      {/* Soft volumetric halo. Depth-tested, so the orb itself occludes its
+          centre. A disc, not a quad: the shader already fades to nothing at
+          r = 1, so the corners are shaded and then multiplied by zero — and
+          this pass covers a large part of the screen. */}
       <mesh ref={haloRef} material={haloMaterial} scale={ORB_RADIUS * 9}>
-        <planeGeometry args={[1, 1]} />
+        <circleGeometry args={[0.5, 96]} />
       </mesh>
 
       {/* Plasma nucleus — detail 0 keeps it a faceted crystal */}
@@ -256,7 +261,10 @@ export function GlassCore({
 
       {/* Glass */}
       <mesh ref={orbRef}>
-        <icosahedronGeometry args={[ORB_RADIUS, refraction ? 16 : 8]} />
+        {/* Detail 8 is already smooth at this size — the silhouette moves
+            by half a pixel — and the sphere is drawn twice a frame (once
+            into the refraction buffer), so the vertices are worth saving. */}
+        <icosahedronGeometry args={[ORB_RADIUS, 8]} />
         {refraction ? (
           <MeshTransmissionMaterial
             samples={refraction.samples}
@@ -299,7 +307,7 @@ export function GlassCore({
 
       {/* Fresnel rim, just outside the glass */}
       <mesh material={rimMaterial} scale={1.035}>
-        <sphereGeometry args={[ORB_RADIUS, 48, 48]} />
+        <sphereGeometry args={[ORB_RADIUS, 24, 24]} />
       </mesh>
     </group>
   );
