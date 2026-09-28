@@ -13,10 +13,12 @@ import { orbit, rotateBy } from "@/lib/play-store";
 //                 the sideways ones, so a sideways swipe rotates — and once
 //                 it has, the same gesture tilts as well. Scroll is never trapped.
 //
-//   Mouse         A drag already means "select text". So rotation needs a
-//                 press-and-hold: keep the left button still for HOLD_MS and
-//                 the cursor turns into a grab hand; drag from there. A quick
-//                 drag still selects text exactly as before.
+//   Mouse         A sideways drag turns the scene straight away, exactly as a
+//                 sideways swipe does on a touch screen — that is what people
+//                 reach for, and waiting on a hold first read as "rotation is
+//                 broken, it just selects text". A mostly-vertical drag is
+//                 still a text selection, and a press held still for HOLD_MS
+//                 grabs in any direction.
 //
 //   Stage         Inside an element marked [data-orbit-stage] (the Playground)
 //                 there is nothing to select or scroll sideways, so the mouse
@@ -144,13 +146,9 @@ export function useSceneDrag(enabled: boolean) {
         const dx = e.clientX - press.startX;
         const dy = e.clientY - press.startY;
         if (Math.hypot(dx, dy) < SLOP_PX) return;
-        if (press.mouse) {
-          // They moved before the hold completed: it's a text selection.
-          release();
-          return;
-        }
         if (Math.abs(dx) <= Math.abs(dy)) {
-          // Mostly vertical: that's a scroll, and the browser has it.
+          // Mostly vertical. For a finger that is a scroll, for a mouse a text
+          // selection — either way the browser keeps it.
           release();
           return;
         }
