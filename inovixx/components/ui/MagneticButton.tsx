@@ -11,7 +11,12 @@ type CommonProps = {
 };
 
 type ButtonAsLink = CommonProps & { href: string; onClick?: never };
-type ButtonAsButton = CommonProps & { href?: undefined; onClick?: () => void };
+type ButtonAsButton = CommonProps & {
+  href?: undefined;
+  onClick?: () => void;
+  type?: "button" | "submit";
+  disabled?: boolean;
+};
 
 export function MagneticButton(props: ButtonAsLink | ButtonAsButton) {
   const ref = useRef<HTMLAnchorElement & HTMLButtonElement>(null);
@@ -60,14 +65,19 @@ export function MagneticButton(props: ButtonAsLink | ButtonAsButton) {
     );
   }
 
+  // Past the link branch this is the button form; the union itself cannot
+  // narrow on an optional `href`.
+  const { type = "button", disabled, onClick } = props as ButtonAsButton;
+
   return (
     <button
       ref={ref}
-      type="button"
-      onClick={props.onClick}
+      type={type}
+      disabled={disabled}
+      onClick={onClick}
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
-      className={`${base} ${sizing} ${styles} ${className}`}
+      className={`${base} ${sizing} ${styles} ${disabled ? "pointer-events-none opacity-40" : ""} ${className}`}
     >
       {content}
     </button>

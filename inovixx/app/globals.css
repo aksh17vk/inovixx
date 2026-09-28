@@ -469,6 +469,50 @@ html.is-loading {
 }
 
 /* ------------------------------------------------------------------ */
+/* Form fields (components/contact/ContactForm.tsx)                    */
+/* ------------------------------------------------------------------ */
+
+.field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-line);
+  background: color-mix(in srgb, var(--color-bg) 60%, transparent);
+  color: var(--color-fg);
+  font: inherit;
+  font-size: 15px;
+  transition:
+    border-color 250ms ease,
+    box-shadow 250ms ease,
+    background-color 250ms ease;
+}
+.field::placeholder {
+  color: var(--color-fg-faint);
+}
+.field:hover {
+  border-color: color-mix(in srgb, var(--color-fg) 18%, transparent);
+}
+.field:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-violet-soft) 70%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-violet) 22%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+}
+.field[aria-invalid="true"] {
+  border-color: color-mix(in srgb, var(--color-pink) 65%, transparent);
+}
+textarea.field {
+  resize: vertical;
+  min-height: 7.5rem;
+  line-height: 1.6;
+}
+
+.field-error {
+  font-size: 13px;
+  color: color-mix(in srgb, var(--color-pink) 85%, white);
+}
+
+/* ------------------------------------------------------------------ */
 /* Cursor: Cuberto's mouse-follower (components/ui/Cursor.tsx), themed */
 /* ------------------------------------------------------------------ */
 
