@@ -14,6 +14,7 @@ import {
   type QualityLevel,
 } from "./quality";
 import { setPointer } from "@/lib/scroll-store";
+import { markSceneReady } from "@/lib/boot";
 import { orbit } from "@/lib/play-store";
 import { useSceneDrag } from "./useSceneDrag";
 import { frame } from "./scene-mix";
@@ -78,6 +79,8 @@ export function IntelligenceCore() {
   if (!ready) return null;
 
   if (tier === "fallback") {
+    // No WebGL2: there is no first frame coming, so release the curtain.
+    markSceneReady();
     return <StaticCoreFallback />;
   }
 
@@ -121,7 +124,10 @@ export function IntelligenceCore() {
         gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
         camera={{ fov: 45, position: [0, 0, 6.3], near: 0.1, far: 80 }}
         // Fade in once the first frame exists, hiding the shader-compile hitch.
-        onCreated={() => setLive(true)}
+        onCreated={() => {
+          setLive(true);
+          markSceneReady();
+        }}
       >
         {adaptive && (
           // Under the floor for most of a two-second window → drop one rung.

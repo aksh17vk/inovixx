@@ -336,6 +336,139 @@ html.is-orbiting * {
 }
 
 /* ------------------------------------------------------------------ */
+/* First load (components/ui/Loader.tsx)                               */
+/* ------------------------------------------------------------------ */
+
+/* Rendered on the server, so it covers the page from the first byte. The
+   animation is the safety net: if JavaScript never runs, or the scene never
+   reports in, the curtain still lifts — nobody is trapped behind it. */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.75rem;
+  background: var(--color-bg);
+  animation: loader-failsafe 600ms ease 6s forwards;
+}
+.loader[data-state="done"] {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 600ms ease,
+    visibility 0s linear 600ms;
+  animation: none;
+}
+@keyframes loader-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Nothing to scroll to while the curtain is down, and scrolling behind it
+   would run the scroll story where it cannot be seen. */
+html.is-loading {
+  overflow: hidden;
+}
+
+/* The core in miniature: a lit centre inside two turning rings. */
+.loader-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+}
+.loader-orbit {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-violet-soft) 45%, transparent);
+  border-top-color: transparent;
+  border-bottom-color: color-mix(in srgb, var(--color-cyan) 55%, transparent);
+  animation: loader-spin 1.8s linear infinite;
+}
+.loader-orbit-b {
+  inset: 18px;
+  border-color: color-mix(in srgb, var(--color-cyan) 30%, transparent);
+  border-right-color: transparent;
+  border-left-color: color-mix(in srgb, var(--color-violet) 60%, transparent);
+  animation-duration: 2.6s;
+  animation-direction: reverse;
+}
+.loader-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #fff 0 30%, var(--color-violet-soft) 70%);
+  box-shadow:
+    0 0 18px 4px color-mix(in srgb, var(--color-violet) 60%, transparent),
+    0 0 44px 10px color-mix(in srgb, var(--color-cyan) 18%, transparent);
+  animation: loader-breathe 1.8s ease-in-out infinite;
+}
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes loader-breathe {
+  50% {
+    transform: scale(0.72);
+    opacity: 0.75;
+  }
+}
+
+.loader-word {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.42em;
+  padding-left: 0.42em; /* balance the trailing letter-spacing */
+  color: var(--color-fg-muted);
+}
+
+/* Indeterminate on purpose: the real work (shader compilation, formation
+   builds) reports no progress, and a faked percentage would be a lie. */
+.loader-line {
+  position: relative;
+  width: 132px;
+  height: 1px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-fg) 10%, transparent);
+}
+.loader-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--color-violet-soft) 90%, transparent),
+    transparent
+  );
+  animation: loader-sweep 1.4s ease-in-out infinite;
+}
+@keyframes loader-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-orbit,
+  .loader-dot,
+  .loader-line::after {
+    animation: none;
+  }
+  .loader-dot {
+    opacity: 1;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Cursor: Cuberto's mouse-follower (components/ui/Cursor.tsx), themed */
 /* ------------------------------------------------------------------ */
 

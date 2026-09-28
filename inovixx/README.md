@@ -157,6 +157,15 @@ follows the scroll exactly as it does for everyone else.
 
 ### Page chrome
 
+- **First load** (`ui/Loader.tsx`, `.loader` in `globals.css`, `lib/boot.ts`):
+  a curtain in the page colour, server-rendered so it is painted with the
+  first byte, hiding the part of the load that looks broken — shader
+  compilation, the first formation builds, the canvas fading in. It lifts when
+  the scene reports its first frame (`markSceneReady`) *and* the fonts are in,
+  never sooner than 700 ms so it cannot flicker past, and never later than 5 s
+  so a failing WebGL context cannot trap anyone. With JavaScript off, a CSS
+  animation lifts it anyway. Scrolling is held while it is down.
+
 - **Always opens at the hero.** The browser restores scroll according to the
   mode stored on the history entry, so `hooks/useLenis.ts` keeps it `auto`
   while the page is open (Back/Forward to a `#section` or from `/privacy`
